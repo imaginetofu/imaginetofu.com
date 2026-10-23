@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+<defs>
+    <linearGradient id="itgfi" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
+    </linearGradient>
+  </defs>
+  <rect x="14" y="14" width="92" height="92" rx="24" fill="#f1ead9"/>
+  <g fill="none" stroke="#3a3340" stroke-linecap="round" stroke-width="9">
+    <path d="M34,60 Q43,49 52,60"/><path d="M68,60 Q77,49 86,60"/>
+  </g>
+  <path d="M54,80 Q60,86 66,80" fill="none" stroke="#3a3340" stroke-width="7" stroke-linecap="round"/>
+  <path d="M9.03,71.93 A54,17 -18 0 1 108.25,39.70" fill="none" stroke="url(#itgfi)" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+  <path d="M108.25,39.70 A54,17 -18 1 1 9.03,71.93" fill="none" stroke="url(#itgfi)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M9.03,64.43 Q11.13,69.83 16.53,71.93 Q11.13,74.03 9.03,79.43 Q6.93,74.03 1.53,71.93 Q6.93,69.83 9.03,64.43Z" fill="#f1ead9" opacity="1"/>
+</svg>

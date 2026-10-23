@@ -1,0 +1,18 @@
+node_modules
+dist
+.claude
+notes
+CLAUDE.md
+start-dev.bat
+
+# heavy loops/clips are served from bunny.net (imaginetofumedia.b-cdn.net); see scripts/bunny-upload.mjs
+# (posters/stills stay on Vercel; keep .env.production, it carries the CDN base for the build)
+public/dream/hero.mp4
+public/dream/hero.webm
+public/dream/glass/*.mp4
+public/dream/glass/*.webm
+public/dream/glass/mobile/*.mp4
+public/dream/glass/mobile/*.webm
+public/dream/glass/seq
+public/work/*/motion-*.mp4
+scripts

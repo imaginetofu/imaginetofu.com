@@ -1,0 +1,217 @@
+/* ================= BOOK PAGE (it-bk-*) =================
+   /book/: hero → three meeting tiles (radio group) → the picked type's
+   TidyCal embed → questions. Sits on case.css (shell, hero, reveals,
+   next row) + base.css. Token colors only. */
+
+.it-bk-hero { padding-bottom: clamp(48px, 8vh, 90px); }
+.it-bk-title em { font-style: italic; color: var(--it-mint); }
+
+/* ---------- tiles ---------- */
+
+.it-bk-pick-h { margin: 0 0 1.2rem; font-weight: 400; }
+
+.it-bk-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(14px, 1.6vw, 22px);
+}
+
+.it-bk-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  text-align: left;
+  padding: clamp(22px, 2.4vw, 32px);
+  border-radius: var(--it-radius);
+  border: 1px solid var(--it-hairline);
+  background:
+    radial-gradient(120% 80% at 0% 0%, color-mix(in srgb, var(--it-mint) 6%, transparent), transparent 60%),
+    color-mix(in srgb, var(--it-ground) 94%, var(--it-cream));
+  color: var(--it-cream);
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform 0.6s var(--it-ease-reveal),
+    border-color 0.4s,
+    background-color 0.4s;
+}
+/* soft aura that wakes on hover / selection */
+.it-bk-tile::before {
+  content: "";
+  position: absolute;
+  inset: -30% -20% auto auto;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  z-index: -1;
+  filter: blur(48px);
+  mix-blend-mode: screen;
+  background: radial-gradient(circle, color-mix(in srgb, var(--it-peach) 30%, transparent), transparent 65%);
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
+.it-bk-tile:hover { transform: translateY(-4px); border-color: var(--it-cream-28); }
+.it-bk-tile:hover::before { opacity: 0.4; }
+.it-bk-tile[aria-checked="true"] {
+  border-color: var(--it-mint);
+  box-shadow: 0 0 0 1px var(--it-mint), 0 24px 60px -30px var(--it-mint-glow);
+}
+.it-bk-tile[aria-checked="true"]::before { opacity: 0.5; }
+
+/* a quiet "not this one" once another seat is taken */
+.it-bk-tiles.has-pick .it-bk-tile[aria-checked="false"] { opacity: 0.62; }
+.it-bk-tiles.has-pick .it-bk-tile[aria-checked="false"]:hover { opacity: 1; }
+
+.it-bk-tile-top { display: flex; align-items: center; justify-content: space-between; }
+
+.it-bk-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--it-cream-28);
+  display: grid;
+  place-items: center;
+  transition: background-color 0.3s, border-color 0.3s;
+}
+.it-bk-check::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--it-eye-dark);
+  scale: 0;
+  transition: scale 0.4s var(--it-ease-reveal);
+}
+.it-bk-tile[aria-checked="true"] .it-bk-check { background: var(--it-mint); border-color: var(--it-mint); }
+.it-bk-tile[aria-checked="true"] .it-bk-check::after { scale: 1; }
+
+.it-bk-tile-name {
+  font-family: var(--it-font-display);
+  font-optical-sizing: auto;
+  font-weight: 450;
+  font-size: clamp(1.8rem, 2.6vw, 2.4rem);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  margin-top: 0.6rem;
+}
+.it-bk-tile-lede { color: var(--it-cream-80); line-height: 1.5; }
+
+.it-bk-tile-list {
+  display: grid;
+  gap: 0.45rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--it-hairline);
+  font-size: 0.94rem;
+  color: var(--it-cream-80);
+}
+.it-bk-tile-list > span { position: relative; padding-left: 1.2rem; }
+/* tiny tofu bullets */
+.it-bk-tile-list > span::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--it-cream);
+  opacity: 0.7;
+}
+
+.it-bk-tile-foot { display: grid; gap: 0.2rem; margin-top: auto; padding-top: 0.6rem; font-size: 0.94rem; }
+.it-bk-tile-when {
+  align-self: flex-start;
+  padding: 0.45em 0.9em;
+  border-radius: 999px;
+  border: 1px solid var(--it-hairline);
+  color: var(--it-mint);
+}
+
+.it-bk-tz { margin-top: 1.1rem; }
+
+/* ---------- calendar ---------- */
+
+.it-bk-cal { padding-block: clamp(56px, 9vh, 110px) 0; scroll-margin-top: 90px; }
+.it-bk-cal-head { margin-bottom: 1.6rem; }
+
+.it-bk-cal-empty {
+  font-family: var(--it-font-display);
+  font-style: italic;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  color: var(--it-cream-65);
+  padding: clamp(28px, 4vw, 48px);
+  border: 1px dashed var(--it-cream-28);
+  border-radius: var(--it-radius);
+  text-align: center;
+}
+
+.it-bk-cal-picked .it-cs-mono { margin-bottom: 0.6rem; }
+.it-bk-cal-title { margin-bottom: 0.6rem; }
+.it-bk-cal-title em { font-style: italic; color: var(--it-mint); }
+.it-bk-change { color: var(--it-cream-65); transition: color 0.3s; }
+.it-bk-change:hover { color: var(--it-mint); }
+
+/* All three embeds load at once (one script pass); only the picked one is
+   shown. Hidden ones keep full width so TidyCal sizes them correctly. */
+.it-bk-frames { position: relative; }
+.it-bk-frame {
+  position: absolute;
+  inset: 0 0 auto 0;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+.it-bk-frame.is-on {
+  position: relative;
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.7s var(--it-ease-reveal);
+}
+.it-bk-frames:not(.has-pick) { min-height: 0; }
+
+.it-bk-frame .tidycal-embed {
+  border-radius: var(--it-radius);
+  overflow: hidden;
+  border: 1px solid var(--it-hairline);
+  min-height: 560px;
+  background: color-mix(in srgb, var(--it-ground) 94%, var(--it-cream));
+}
+.it-bk-frame iframe { display: block; width: 100%; border: 0; }
+
+.it-bk-noscript { color: var(--it-cream-80); }
+.it-bk-noscript a { color: var(--it-mint); }
+
+/* ---------- questions ---------- */
+
+.it-bk-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(28px, 4vw, 56px) clamp(28px, 5vw, 80px);
+}
+.it-bk-faq h3 {
+  font-family: var(--it-font-display);
+  font-weight: 450;
+  font-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  margin-bottom: 0.5rem;
+}
+.it-bk-faq p { color: var(--it-cream-80); max-width: 48ch; }
+.it-bk-faq a { color: var(--it-mint); }
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 900px) {
+  .it-bk-tiles { grid-template-columns: 1fr; }
+  .it-bk-tile-name { margin-top: 0.2rem; }
+  .it-bk-faq-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- reduced motion ---------- */
+
+html.reduced .it-bk-tile,
+html.reduced .it-bk-tile::before,
+html.reduced .it-bk-check::after,
+html.reduced .it-bk-frame.is-on { transition: none; }
+html.reduced .it-bk-tile:hover { transform: none; }

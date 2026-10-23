@@ -1,0 +1,26 @@
+/* Imagine TOFU — brand tokens. Single source of truth.
+   Do not add colors outside this set. */
+
+:root {
+  /* palette */
+  --it-ground: #0f1814;
+  --it-mint: #9ed9bf;
+  --it-peach: #f3b59c;
+  --it-cream: #f1ead9;
+  --it-eye-dark: #3a3340;
+
+  /* type */
+  --it-font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --it-font-accent: "Fraunces", Georgia, serif; /* italic accent words + eyebrows only */
+  --it-font-body: "Hanken Grotesk", system-ui, sans-serif;
+  --it-font-mono: "Space Mono", ui-monospace, monospace;
+
+  /* motion (anti-cheese constraints) */
+  --it-aura-blur: 72px;
+  --it-aura-rotation: 26s;
+  --it-aura-opacity-min: 0.34;
+  --it-aura-opacity-max: 0.5;
+  --it-ease-reveal: cubic-bezier(0.22, 1, 0.36, 1);
+  --it-reveal-duration: 1s;
+  --it-reveal-stagger: 0.09s;
+}

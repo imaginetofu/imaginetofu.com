@@ -1,0 +1,21 @@
+node_modules
+dist
+.DS_Store
+
+.vercel
+
+# API keys / credentials
+notes/*.key
+*.key
+
+# scratch + heavy media served from bunny.net (see scripts/bunny-upload.mjs, .env.production)
+notes/
+start-dev.bat
+public/dream/hero.mp4
+public/dream/hero.webm
+public/dream/glass/*.mp4
+public/dream/glass/*.webm
+public/dream/glass/mobile/*.mp4
+public/dream/glass/mobile/*.webm
+public/dream/glass/seq/
+public/work/*/motion-*.mp4

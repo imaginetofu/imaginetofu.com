@@ -1,0 +1,117 @@
+/* ================= AFTER DARK — glass meadow (Oct 2026) =================
+   Replaces the nebula / sleeping-tofu sequence inside .it-dream-scene.
+   Three layers: backdrop loops + scrubbed transitions, the tofu creature,
+   foreground bloom. wonder × craft cards reuse their sections.css styling
+   with the overrides at the bottom. Loaded after sections.css. */
+
+@property --it-tr { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+/* the pinned stage is defined by sections.css (.it-dream-stage, full-bleed 100svh) */
+html.js:not(.reduced) .it-dream-stage { background: var(--it-ground); }
+
+/* ---- backdrop: three loops + two scrubbed transitions, stacked, opacity-driven by JS ---- */
+.it-dg-bd { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 60%; opacity: 0; z-index: 1; will-change: opacity; }
+.it-dg-bd--s1 { opacity: 1; }
+.it-dg-vignette { position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 50% 60%, transparent 62%, rgba(15,24,20,.38) 100%),
+    linear-gradient(to bottom, rgba(15,24,20,.18), transparent 22%, transparent 82%, rgba(15,24,20,.42)); }
+/* soft seams, scroll-aware (JS drives opacity): the top feather belongs to station 1 and
+   dissolves as you push into the field; the bottom one only arrives with the canopy. */
+.it-dg-edge { position: absolute; inset: 0; z-index: 2; pointer-events: none; will-change: opacity; }
+.it-dg-edge--top { background: linear-gradient(to bottom, var(--it-ground) 0%, color-mix(in srgb, var(--it-ground) 88%, transparent) 8%, color-mix(in srgb, var(--it-ground) 45%, transparent) 20%, transparent 38%); }
+.it-dg-edge--bottom { opacity: 0; background: linear-gradient(to top, var(--it-ground) 0%, color-mix(in srgb, var(--it-ground) 70%, transparent) 7%, transparent 22%); }
+
+/* ---- stardust wake canvas (between backdrop and tofu) ---- */
+.it-dg-trail { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; pointer-events: none; }
+/* resonance: the backdrop glowing with the ring's comet (station 3); screen-blended over the video */
+.it-dg-reso { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; z-index: 2; pointer-events: none; mix-blend-mode: screen; }
+
+/* ---- the creature ---- */
+.it-dg-tofu { position: absolute; left: 0; top: 0; width: min(26vw, 320px); aspect-ratio: 1; z-index: 5; will-change: transform; pointer-events: none; }
+/* the cube itself is pokeable at any point in the journey (the halo and ghosts stay click-through) */
+.it-dg-body { pointer-events: auto; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.it-dg-tofu > * { position: absolute; inset: 0; }
+.it-dg-halo { inset: -22%; border-radius: 50%; mix-blend-mode: screen; opacity: var(--it-aura-opacity-min);
+  animation: it-dg-halo-spin var(--it-aura-rotation) linear infinite, it-aura-breathe 9s ease-in-out infinite alternate; }
+/* the blur lives on a child: blurred once into the layer, then the layer spins on the compositor.
+   (blur + rotation on the same element made the GPU re-blur it every frame) */
+.it-dg-halo::before { content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--it-mint), var(--it-cream), var(--it-peach), var(--it-cream), var(--it-mint));
+  filter: blur(var(--it-aura-blur)); }
+/* a blurred gradient disc has no visible orientation, so this never reads as an element spinning */
+@keyframes it-dg-halo-spin { to { transform: rotate(360deg); } }
+.it-dg-body { position: absolute; inset: 0; will-change: transform; transform-origin: 50% 62%; }
+.it-dg-body > * { position: absolute; inset: 0; }
+.it-dg-ghost { -webkit-mask: url(/dream/glass/tofu-wonder.webp) center/contain no-repeat; mask: url(/dream/glass/tofu-wonder.webp) center/contain no-repeat;
+  mix-blend-mode: screen; opacity: 0; will-change: transform, opacity; }
+.it-dg-ghost--mint { background: var(--it-mint); }
+.it-dg-ghost--peach { background: var(--it-peach); }
+.it-dg-face { width: 100%; height: 100%; object-fit: contain; }
+.it-dg-face--blink { opacity: 0; transition: opacity .09s linear; }
+.it-dg-face--joy { opacity: 0; }   /* the hero's ≧◡≦ on poke; JS crossfades it */
+/* drawn eyes: fractions of the body box, measured from the wide-eyed render */
+.it-dg-eyes { position: absolute; inset: 0; transition: opacity .09s linear; }
+.it-dg-eye { position: absolute; inset: auto; border-radius: 50%; background: var(--it-eye-dark); will-change: transform;
+  box-shadow: inset 0 -0.06em 0.08em rgba(255,255,255,.08); }
+.it-dg-eye::before { content: ""; position: absolute; left: 22%; top: 16%; width: 34%; height: 34%; border-radius: 50%; background: var(--it-cream); opacity: .95; }
+.it-dg-eye::after  { content: ""; position: absolute; left: 62%; top: 58%; width: 16%; height: 16%; border-radius: 50%; background: var(--it-cream); opacity: .7; }
+.it-dg-eye--l { left: 29.8%; top: 46.5%; width: 5.96%; height: 5.96%; }
+.it-dg-eye--r { left: 44.0%; top: 50.4%; width: 6.45%; height: 6.2%; }
+
+/* ---- aurora ring around the creature (station 3 trial; JS builds + draws the two canvases) ---- */
+/* base.css clamps svg/img/video/canvas-like media to max-width:100%; this box is 220% of the tofu */
+.it-dg-tofu > .it-dg-ring { inset: auto; left: -60%; top: -60%; width: 220%; height: 220%; max-width: none; max-height: none; pointer-events: none; mix-blend-mode: screen; }
+
+/* ---- foreground bloom: parallaxes in front of tofu across station 2 ---- */
+.it-dg-fg { position: absolute; left: 0; top: 0; width: clamp(560px, 112vh, 1240px); max-width: none; aspect-ratio: 1; z-index: 6; opacity: 0; pointer-events: none; will-change: transform, opacity; }
+/* glow on the image, not the moving layer: painted once instead of re-filtered every frame of the sweep */
+.it-dg-fg img { width: 100%; height: 100%; max-width: none; object-fit: contain; display: block;
+  filter: drop-shadow(0 0 48px rgba(243,181,156,.18)); }
+
+/* ---- copy beats (station 1 lead, station 3 punch) ---- */
+.it-dg-copy { position: absolute; left: clamp(24px, 6vw, 96px); bottom: clamp(32px, 9vh, 120px); max-width: min(640px, 54vw); z-index: 8; opacity: 0; transform: translateY(12px); will-change: opacity, transform; pointer-events: none; }
+/* a feathered pool of ground color behind the words so they hold over bright glass */
+.it-dg-copy::before { content: ""; position: absolute; inset: -18% -14% -22% -16%; z-index: -1; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(ellipse at 35% 55%, rgba(15,24,20,.78) 0%, rgba(15,24,20,.55) 42%, rgba(15,24,20,0) 72%); filter: blur(18px); }
+.it-dg-copy--3::before { background: radial-gradient(ellipse at 35% 55%, rgba(15,24,20,.9) 0%, rgba(15,24,20,.68) 42%, rgba(15,24,20,0) 74%); }
+.it-dg-copy .it-eyebrow { font-weight: 700; font-size: 13px; letter-spacing: .22em; color: var(--it-peach); margin: 0 0 18px; line-height: 1.5;
+  text-shadow: 0 1px 2px rgba(15,24,20,.9), 0 0 18px rgba(15,24,20,.9); }
+.it-dg-line { font-family: var(--it-font-display); font-weight: 440; font-variation-settings: "opsz" 96, "SOFT" 60; font-size: clamp(28px, 4.1vw, 54px); line-height: 1.12; letter-spacing: -.005em; margin: 0; color: var(--it-cream);
+  text-shadow: 0 1px 2px rgba(15,24,20,.95), 0 2px 8px rgba(15,24,20,.85), 0 0 48px rgba(15,24,20,.8); }
+.it-dg-line em { font-style: italic; font-weight: 400; color: var(--it-mint); }
+/* the flow word keeps its drifting light but drops mint from the ramp: mint on the mint haze was unreadable.
+   cream/peach only, plus a heavier shadow stack (filter, since text-shadow can't sit under clipped text) */
+.it-dg-line .it-dream-flow { font-style: italic; font-weight: 400; text-shadow: none;   /* inherited text-shadow paints over a clipped fill */
+  background: linear-gradient(100deg, #f1ead9 0%, #f3b59c 30%, #f1ead9 55%, #f3b59c 80%, #f1ead9 100%); background-size: 300% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 1px rgba(15,24,20,1)) drop-shadow(0 2px 4px rgba(15,24,20,.9)) drop-shadow(0 4px 16px rgba(15,24,20,.8)); }
+
+/* ---- wonder × craft cards: override the sections.css placement/glass for the meadow ---- */
+html.js:not(.reduced) .it-dream-card { top: 47%; width: min(320px, 23vw); padding: 1.5rem 1.55rem 1.6rem; pointer-events: none; }
+html.js:not(.reduced) .it-dream-card.it-glass { background: color-mix(in srgb, var(--it-ground) 58%, transparent); -webkit-backdrop-filter: blur(14px) saturate(.9); backdrop-filter: blur(14px) saturate(.9); }
+html.js:not(.reduced) .it-dream-word { line-height: 1.15; text-shadow: none; margin-bottom: .45rem; filter: drop-shadow(0 1px 1px rgba(15,24,20,.9)) drop-shadow(0 2px 10px rgba(15,24,20,.6)); }
+html.js:not(.reduced) .it-dream-card .it-dream-label { font-size: .7rem; color: color-mix(in srgb, var(--it-cream) 68%, transparent); margin-bottom: .7rem; line-height: 1.5; }
+html.js:not(.reduced) .it-dream-card p { font-size: clamp(.9rem, 1.08vw, 1.02rem); line-height: 1.62; color: color-mix(in srgb, var(--it-cream) 94%, transparent); text-shadow: 0 1px 2px rgba(15,24,20,.8); }
+html.js:not(.reduced) .it-dream-x-glyph { top: 30%; text-shadow: 0 1px 2px rgba(15,24,20,.9), 0 0 16px rgba(15,24,20,.8); }
+
+@media (max-width: 899px) {
+  /* 9:16 station loops (JS swaps the sources): frame them centred, transforms from the middle */
+  .it-dg-bd { object-position: 50% 50%; transform-origin: 50% 50%; }
+  /* wonder × craft stack above and below the tofu. The desktop override above (23vw wide, top 47%)
+     outranks the old sections.css phone rule, so restate the phone layout at the same specificity. */
+  html.js:not(.reduced) .it-dream-card { width: min(330px, 86vw); left: 50%; right: auto; margin-left: max(-165px, -43vw); padding: 1.05rem 1.15rem; text-align: left; }
+  html.js:not(.reduced) .it-dream-card[data-side="w"] { top: 23%; }
+  html.js:not(.reduced) .it-dream-card[data-side="c"] { top: 77%; }
+  html.js:not(.reduced) .it-dream-card[data-side="w"] .it-dream-card-ic { margin-left: 0; }
+  html.js:not(.reduced) .it-dream-card p { font-size: .9rem; line-height: 1.55; }
+  html.js:not(.reduced) .it-dream-x-glyph { left: 16%; top: 50%; }
+  .it-dg-tofu { width: min(46vw, 240px); }
+  .it-dg-fg { width: clamp(560px, 100vh, 900px); }   /* wider than the phone: the head fills the screen as it passes */
+  .it-dg-copy { max-width: 88vw; left: 6vw; bottom: 12vh; }
+  .it-dg-line { font-size: clamp(26px, 7vw, 40px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .it-dg-halo, .it-dg-ghost, .it-dg-trail, .it-dg-fg { display: none; }
+}

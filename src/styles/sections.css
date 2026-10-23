@@ -1,0 +1,1885 @@
+/* ============================================================
+   Imagine TOFU v3 — sections
+   ============================================================ */
+
+/* registered so the dream-card trail's conic angle can interpolate */
+@property --it-tr { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+
+/* ================= HERO ================= */
+
+/* ⚠ never add transform/filter/will-change to .it-hero itself — it would
+   become the containing block for the fixed .it-cube and re-clip it
+   (overflow: hidden). Animate children only. */
+.it-hero {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  /* keep the cube's screen-blend group local to the hero — helps
+     browsers blend correctly over the accelerated video layer */
+  isolation: isolate;
+}
+
+/* --- dreamy cosmic swirl ground --- */
+.it-hero-cosmos {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+.it-hero-cosmos img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+/* moving nebula (when a file exists) paints over the still poster */
+.it-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  /* long dissolve over the matching poster still — no pop-in */
+  transition: opacity 2.2s var(--it-ease-reveal);
+}
+.it-hero-cosmos::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* legibility veil, strongest over the bottom-left text zone.
+     retuned for the cosmic-swirl video: its cloud is far brighter in the
+     upper-left than the old galaxy still, so the left half needs a scrim */
+  background:
+    linear-gradient(to top, color-mix(in srgb, var(--it-ground) 82%, transparent) 0%, transparent 50%),
+    radial-gradient(90% 70% at 18% 88%, color-mix(in srgb, var(--it-ground) 72%, transparent) 0%, transparent 66%),
+    linear-gradient(100deg, color-mix(in srgb, var(--it-ground) 66%, transparent) 0%, color-mix(in srgb, var(--it-ground) 30%, transparent) 34%, transparent 55%);
+  pointer-events: none;
+}
+
+/* --- imagination mind-waves: rising motes + gather-cloud --- */
+.it-hero-motes {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0; /* JS fades in after the hero intro */
+  transition: opacity 1.2s var(--it-ease-reveal);
+}
+.it-hero-cloud {
+  position: absolute;
+  z-index: 1;
+  top: 14%;
+  left: 50%;
+  width: min(46vw, 560px);
+  aspect-ratio: 1.5 / 1;
+  translate: -50% -50%;
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(52px);
+  mix-blend-mode: screen;
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in srgb, var(--it-mint) 75%, transparent) 0%,
+    color-mix(in srgb, var(--it-mint) 55%, transparent) 18%,
+    color-mix(in srgb, var(--it-peach) 22%, transparent) 46%,
+    transparent 74%
+  );
+  opacity: var(--it-aura-opacity-min);
+  animation: it-aura-breathe 9s ease-in-out infinite alternate;
+}
+
+/* --- iridescent aura (locked parameters) --- */
+.it-aura {
+  position: absolute;
+  width: min(58vmin, 640px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+.it-hero .it-aura {
+  top: 44%;
+  left: 50%;
+  right: auto;
+  translate: -50% -50%;
+}
+.it-aura-spin {
+  position: absolute;
+  inset: 0;
+  animation:
+    it-aura-rotate var(--it-aura-rotation) linear infinite,
+    it-aura-breathe 9s ease-in-out infinite alternate;
+}
+.it-aura-blob {
+  position: absolute;
+  width: 62%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(var(--it-aura-blur));
+  mix-blend-mode: screen;
+  transform: translateZ(0);
+}
+.it-aura-mint {
+  top: 0; left: 0;
+  background: radial-gradient(circle, var(--it-mint) 0%, transparent 68%);
+}
+.it-aura-peach {
+  bottom: 0; right: 0;
+  background: radial-gradient(circle, var(--it-peach) 0%, transparent 68%);
+}
+@keyframes it-aura-rotate { to { rotate: 360deg; } }
+@keyframes it-aura-breathe {
+  from { opacity: var(--it-aura-opacity-min); }
+  to { opacity: var(--it-aura-opacity-max); }
+}
+
+/* --- floating glass tofu cube --- */
+/* default (reduced motion / no-JS / pre-init): calm hero-right placement.
+   blend + z-index live on the SAME element so the near-black plate
+   disappears into the ground everywhere it travels. */
+.it-cube {
+  position: absolute;
+  top: 46%;
+  right: clamp(2vw, 6vw, 9vw);
+  translate: 0 -52%;
+  width: min(46vw, 580px);
+  z-index: 2;
+  mix-blend-mode: screen;
+  /* clickable: poke the tofu to make it jiggle (JS). the ::before glow
+     keeps pointer-events: none so only the tofu itself is the hit target */
+  pointer-events: auto;
+  cursor: pointer;
+  will-change: transform;
+}
+/* desktop motion mode: promoted to fixed for the scroll journey —
+   centered and zoomed, RZV-style (pose set in JS) */
+.it-cube.is-fixed {
+  position: fixed;
+  top: 44%;
+  /* rest pose rides the glow origin of the cosmic-swirl loop (≈72% x)
+     so the imagination stream rises from the cube — per the sketch */
+  left: 71%;
+  right: auto;
+  bottom: auto;
+  translate: -50% -50%;
+  width: min(50vw, 700px);
+}
+/* breathing inner light — the tofu generates the vortex. Opacity range
+   is the locked aura band (0.34–0.5); duration matches the float. */
+.it-cube::before {
+  content: "";
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--it-cream) 38%, transparent),
+    color-mix(in srgb, var(--it-mint) 26%, transparent) 55%,
+    transparent 100%
+  );
+  opacity: 0.34;
+  animation: it-cube-breathe 4.4s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes it-cube-breathe {
+  from { opacity: 0.34; scale: 0.96; }
+  to { opacity: 0.5; scale: 1.06; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .it-cube::before { animation: none; }
+}
+/* blink frame — the closed-eye render, stacked over the open one.
+   JS crossfades it in on a calm cadence. */
+.it-cube-blink,
+.it-cube-joy {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+/* vortex bloom (preloader handoff): the cube grows out of the little tofu.
+   Individual translate/scale so GSAP's transforms on the media stay theirs. */
+/* !important: GSAP writes inline translate/scale: none on elements it owns */
+.it-cube.is-blooming .it-cube-media {
+  translate: var(--bloom-x, 0px) var(--bloom-y, 0px) !important;
+  scale: var(--bloom-s, 1) !important;
+}
+.it-cube.is-blooming::before {
+  animation: none;
+  opacity: var(--bloom-glow, 0);
+  translate: var(--bloom-x, 0px) var(--bloom-y, 0px);
+  scale: calc(0.96 * var(--bloom-s, 1));
+}
+.it-cube-media {
+  width: 100%;
+  height: auto;
+  /* feather the render's square plate so the screen blend never
+     shows a hard edge as the cube travels */
+  -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 60%, transparent 95%);
+  mask-image: radial-gradient(closest-side at 50% 50%, #000 60%, transparent 95%);
+}
+.it-mascot-media {
+  width: 100%;
+  height: auto;
+  -webkit-mask-image: radial-gradient(closest-side at 50% 46%, #000 55%, transparent 88%);
+  mask-image: radial-gradient(closest-side at 50% 46%, #000 55%, transparent 88%);
+  filter: saturate(1.06) contrast(1.02);
+}
+
+/* --- botanical sprouts --- */
+.it-sprouts {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -2px;
+  width: 100%;
+  height: min(44vh, 420px);
+  z-index: 1;
+  pointer-events: none;
+}
+.it-sprouts .it-stem { fill: none; stroke: var(--it-cream); stroke-width: 1.6; stroke-linecap: round; opacity: 0.35; }
+.it-sprouts .it-sd-leaf {
+  fill: color-mix(in srgb, var(--it-mint) 55%, var(--it-ground));
+  stroke: var(--it-mint);
+  stroke-width: 1.2;
+  opacity: 0.7;
+}
+.it-sprouts .it-sd-bean {
+  fill: color-mix(in srgb, var(--it-peach) 70%, var(--it-ground));
+  opacity: 0.8;
+}
+.it-sd-top {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.it-sprouts .it-bubble {
+  fill: color-mix(in srgb, var(--it-mint) 12%, transparent);
+  stroke: var(--it-mint);
+  stroke-width: 1.2;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.it-sprouts .it-tofu-block { fill: var(--it-cream); opacity: 0.82; }
+.it-sprouts .it-tofu-eye { fill: var(--it-eye-dark); }
+.it-sprouts .it-tofu-eye-happy {
+  fill: none;
+  stroke: var(--it-eye-dark);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+.it-sprout-tofu {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+.it-sway {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: it-sway 8s ease-in-out infinite alternate;
+}
+.it-sway:nth-child(2) { animation-duration: 9.4s; animation-delay: -2s; }
+.it-sway:nth-child(3) { animation-duration: 7.2s; animation-delay: -4s; }
+.it-sway:nth-child(4) { animation-duration: 10.1s; animation-delay: -1s; }
+.it-sway:nth-child(5) { animation-duration: 8.6s; animation-delay: -3s; }
+@keyframes it-sway { from { rotate: -1.1deg; } to { rotate: 1.1deg; } }
+
+/* --- hero text: bottom-left (locked decision) --- */
+.it-hero-text {
+  position: absolute;
+  left: var(--it-gutter);
+  /* Dennis override (Jul 2026): vertically centered, was bottom-left */
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 3;
+  max-width: min(720px, 58vw);
+}
+.it-hero-eyebrow { margin-bottom: 1.2rem; }
+.it-hero-eyebrow .it-line { line-height: 1.9; }
+
+.it-hero-sub {
+  max-width: 46ch;
+  margin-top: 1.6rem;
+  color: var(--it-cream-80);
+}
+
+/* rotating word (Portfolio Cosmic pattern, translated) */
+.it-rotate {
+  position: relative;
+  display: inline-block;
+  vertical-align: baseline; /* sit on the sentence's baseline (Fraunces italic metrics differ) */
+  line-height: 1;
+  font-size: 1.08em; /* Fraunces italic runs small next to Hanken */
+  font-family: var(--it-font-accent);
+  font-style: italic;
+  color: var(--it-mint);
+}
+.it-rotate-sizer { visibility: hidden; }
+.it-rotate-word {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: max-content; /* natural width — JS measures these */
+  opacity: 0;
+  white-space: nowrap;
+}
+.it-rotate-word.is-on { opacity: 1; }
+
+.it-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 2.1rem;
+}
+
+/* --- scroll cue --- */
+.it-scroll-cue {
+  position: absolute;
+  right: var(--it-gutter);
+  bottom: 30px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  font-family: var(--it-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--it-cream-50);
+}
+.it-scroll-line {
+  position: relative;
+  width: 1px;
+  height: 46px;
+  background: var(--it-hairline);
+  overflow: hidden;
+}
+.it-scroll-line::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 40%;
+  background: var(--it-mint);
+  animation: it-scroll-down 1.9s ease-in-out infinite;
+}
+@keyframes it-scroll-down {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(260%); }
+}
+
+/* ================= MARQUEE ================= */
+
+.it-marquee {
+  border-block: 1px solid var(--it-hairline);
+  overflow: hidden;
+}
+.it-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: it-marquee 52s linear infinite; /* 6 items now — longer track, same crawl speed */
+}
+/* hover: JS eases the track to a crawl (no hard pause) — see motion.js */
+.it-marquee-list {
+  display: flex;
+  align-items: center;
+  gap: 2.8rem;
+  padding: 1.05rem 1.4rem;
+  font-family: var(--it-font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--it-cream-65);
+  white-space: nowrap;
+}
+.it-tofu-dot {
+  position: relative;
+  width: 11px;
+  height: 11px;
+  border-radius: 3.5px;
+  background: var(--it-mint);
+  opacity: 0.8;
+  flex: none;
+  /* little tofu: periodic squish, anchored to its feet */
+  transform-origin: 50% 100%;
+  animation: it-dot-squish 3.4s ease-in-out infinite;
+}
+/* micro-face: two sleepy eyes */
+.it-tofu-dot::before,
+.it-tofu-dot::after {
+  content: "";
+  position: absolute;
+  top: 3.5px;
+  width: 1.8px;
+  height: 3.2px;
+  border-radius: 1px;
+  background: var(--it-eye-dark);
+}
+.it-tofu-dot::before { left: 2.6px; }
+.it-tofu-dot::after { right: 2.6px; }
+/* stagger the squishes so the tofus never sync up */
+.it-marquee-list li:nth-child(4) { animation-delay: 0.7s; }
+.it-marquee-list li:nth-child(6) { animation-delay: 1.4s; }
+.it-marquee-list li:nth-child(8) { animation-delay: 2.1s; }
+.it-marquee-list li:nth-child(10) { animation-delay: 2.8s; }
+.it-marquee-list li:nth-child(12) { animation-delay: 3.5s; }
+@keyframes it-dot-squish {
+  0%, 82%, 100% { transform: scale(1, 1); }
+  88% { transform: scale(1.28, 0.68); }
+  94% { transform: scale(0.94, 1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .it-tofu-dot { animation: none; }
+}
+@keyframes it-marquee { to { transform: translateX(-50%); } }
+
+/* ================= INTRO ================= */
+
+.it-intro { max-width: 1180px; }
+.it-statement {
+  font-family: var(--it-font-display);
+  font-weight: 430;
+  font-size: var(--fs-statement);
+  line-height: 1.22;
+  max-width: 30ch;
+}
+.it-statement em:first-of-type { color: var(--it-peach); }
+.it-statement em:last-of-type { color: var(--it-mint); }
+/* scrubbed word reveal (AI Designer Agency pattern) */
+.it-statement .it-sw { opacity: 0.15; }
+
+.it-intro-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 4rem;
+  margin-top: 2.6rem;
+}
+.it-intro-body > p:first-child { max-width: 52ch; color: var(--it-cream-80); }
+/* the headline doodled: bean → press → cube. Sits as the second flex item
+   in .it-intro-body (the slot the retired mono aside used to fill) */
+.it-intro-doodle { width: clamp(240px, 26vw, 340px); align-self: center; overflow: visible; }
+.it-intro-doodle .it-dd-bean { fill: none; stroke: var(--it-peach); stroke-width: 1.6; stroke-linecap: round; opacity: 0.75; }
+.it-intro-doodle .it-dd-arrow path { fill: none; stroke: var(--it-cream); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0.35; }
+.it-intro-doodle .it-dd-press { fill: none; stroke: var(--it-cream); stroke-width: 1.6; stroke-linecap: round; opacity: 0.7; }
+.it-intro-doodle .it-dd-block { fill: none; stroke: var(--it-peach); stroke-width: 1.6; opacity: 0.75; }
+.it-intro-doodle .it-dd-cube { fill: none; stroke: var(--it-mint); stroke-width: 1.6; opacity: 0.85; }
+.it-intro-doodle .it-dd-face rect { fill: var(--it-mint); }
+.it-intro-doodle .it-dd-face path { fill: none; stroke: var(--it-mint); stroke-width: 1.6; stroke-linecap: round; }
+.it-intro-doodle .it-dd-face { transform-box: fill-box; transform-origin: 50% 50%; }
+.it-intro-doodle .it-dd-label {
+  font-family: var(--it-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  fill: var(--it-cream-50);
+}
+
+.it-intro-bloom {
+  position: absolute;
+  right: var(--it-gutter);
+  top: var(--it-section-pad);
+  width: clamp(70px, 8vw, 120px);
+  opacity: 0.9;
+}
+.it-intro-bloom path,
+.it-intro-bloom .it-pod-shell,
+.it-intro-bloom .it-bean { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.it-intro-bloom .it-stem { stroke: var(--it-cream); opacity: 0.35; }
+.it-intro-bloom .it-leaf { stroke: var(--it-mint); opacity: 0.6; }
+.it-intro-bloom .it-pod-shell { stroke: var(--it-peach); opacity: 0.75; }
+.it-intro-bloom .it-bean { stroke: var(--it-mint); opacity: 0.7; }
+
+/* ================= WORK ================= */
+
+.it-work { position: relative; }
+.it-work-pin {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(1.6rem, 4vh, 3rem);
+  padding: calc(var(--it-gutter) + 3.5rem) 0 var(--it-gutter);
+  overflow: hidden;
+}
+.it-work-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-inline: var(--it-gutter);
+}
+.it-work-head .it-h2 { margin-bottom: 0; }
+.it-work-hint {
+  font-family: var(--it-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--it-cream-50);
+}
+
+.it-work-track {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.4rem, 3vw, 3rem);
+  padding-inline: var(--it-gutter);
+  will-change: transform;
+}
+
+.it-card {
+  flex: none;
+  width: 100%;
+  display: block;
+}
+.it-card-art {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--it-radius);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--it-cream) 5%, var(--it-ground));
+}
+.it-art-layer { position: absolute; inset: 0; transition: opacity 0.55s ease; }
+.it-art-b { opacity: 0; }
+.it-card:hover .it-art-b, .it-card:focus-visible .it-art-b { opacity: 1; }
+.it-card-art > * { transition: transform 0.7s var(--it-ease-reveal); }
+.it-card:hover .it-card-art > *, .it-card:focus-visible .it-card-art > * { transform: scale(1.04); }
+
+/* halftone print texture (Portfolio Cosmic pattern) */
+.it-card-art::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, var(--it-ground) 1px, transparent 1px);
+  background-size: 4px 4px;
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.it-art-motif {
+  position: absolute;
+  inset: 12%;
+  margin: auto;
+  width: 60%;
+  height: 76%;
+}
+.it-art-motif path, .it-art-motif circle, .it-art-motif rect {
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* per-project art — token mixes only */
+/* work cards can link out to case studies without losing the art layout */
+.it-card-link { display: block; color: inherit; text-decoration: none; }
+
+/* Lion Card — brushed-metal warmth on the ground, engraved motif */
+.it-art-lioncard .it-art-a {
+  background:
+    radial-gradient(120% 110% at 22% 88%, color-mix(in srgb, var(--it-peach) 46%, var(--it-ground)) 0%, transparent 58%),
+    radial-gradient(90% 90% at 84% 12%, color-mix(in srgb, var(--it-cream) 26%, var(--it-ground)) 0%, transparent 55%),
+    color-mix(in srgb, var(--it-peach) 14%, var(--it-ground));
+}
+.it-art-lioncard .it-art-b {
+  background:
+    radial-gradient(120% 110% at 78% 88%, color-mix(in srgb, var(--it-mint) 34%, var(--it-ground)) 0%, transparent 60%),
+    color-mix(in srgb, var(--it-peach) 26%, var(--it-ground));
+}
+.it-art-lioncard .it-art-motif rect,
+.it-art-lioncard .it-art-motif path { stroke: var(--it-cream); opacity: 0.75; fill: none; }
+
+.it-art-fernwell .it-art-a {
+  background:
+    radial-gradient(120% 110% at 18% 92%, color-mix(in srgb, var(--it-mint) 52%, var(--it-ground)) 0%, transparent 58%),
+    radial-gradient(90% 90% at 86% 10%, color-mix(in srgb, var(--it-peach) 34%, var(--it-ground)) 0%, transparent 55%),
+    color-mix(in srgb, var(--it-mint) 16%, var(--it-ground));
+}
+.it-art-fernwell .it-art-b {
+  background:
+    radial-gradient(120% 110% at 80% 90%, color-mix(in srgb, var(--it-peach) 50%, var(--it-ground)) 0%, transparent 60%),
+    color-mix(in srgb, var(--it-mint) 30%, var(--it-ground));
+}
+.it-art-fernwell .it-art-motif path { stroke: var(--it-cream); opacity: 0.75; fill: none; }
+
+.it-art-ketsu .it-art-a {
+  background:
+    radial-gradient(110% 100% at 20% 12%, color-mix(in srgb, var(--it-cream) 26%, var(--it-ground)) 0%, transparent 52%),
+    color-mix(in srgb, var(--it-peach) 38%, var(--it-ground));
+}
+.it-art-ketsu .it-art-b {
+  background:
+    radial-gradient(110% 100% at 78% 86%, color-mix(in srgb, var(--it-mint) 34%, var(--it-ground)) 0%, transparent 58%),
+    color-mix(in srgb, var(--it-peach) 52%, var(--it-ground));
+}
+.it-art-ketsu .it-art-motif path, .it-art-ketsu .it-art-motif circle { stroke: var(--it-cream); opacity: 0.8; fill: none; }
+
+.it-art-papermoon .it-art-a {
+  background:
+    radial-gradient(100% 90% at 82% 16%, color-mix(in srgb, var(--it-peach) 30%, var(--it-cream)) 0%, transparent 55%),
+    color-mix(in srgb, var(--it-cream) 88%, var(--it-ground));
+}
+.it-art-papermoon .it-art-b {
+  background:
+    radial-gradient(110% 100% at 20% 80%, color-mix(in srgb, var(--it-mint) 42%, var(--it-cream)) 0%, transparent 60%),
+    color-mix(in srgb, var(--it-cream) 92%, var(--it-ground));
+}
+.it-art-papermoon .it-art-motif path { stroke: var(--it-eye-dark); opacity: 0.7; fill: none; }
+
+.it-art-orbit .it-art-a {
+  background:
+    radial-gradient(80% 80% at 50% 50%, color-mix(in srgb, var(--it-mint) 14%, var(--it-ground)) 0%, transparent 70%),
+    var(--it-ground);
+}
+.it-art-orbit .it-art-b {
+  background:
+    radial-gradient(85% 85% at 50% 46%, color-mix(in srgb, var(--it-peach) 22%, var(--it-ground)) 0%, transparent 70%),
+    color-mix(in srgb, var(--it-mint) 8%, var(--it-ground));
+}
+.it-art-orbit .it-art-motif circle { stroke: var(--it-mint); fill: none; }
+.it-art-orbit .it-art-motif .it-orbit-dot { fill: var(--it-peach); stroke: none; }
+
+.it-art-daisao .it-art-a {
+  background-color: color-mix(in srgb, var(--it-mint) 9%, var(--it-ground));
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--it-mint) 14%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--it-mint) 14%, transparent) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.it-art-daisao .it-art-b {
+  background-color: color-mix(in srgb, var(--it-mint) 20%, var(--it-ground));
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--it-mint) 18%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--it-mint) 18%, transparent) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+.it-art-daisao .it-art-motif rect { stroke: var(--it-mint); fill: color-mix(in srgb, var(--it-ground) 80%, transparent); }
+.it-art-daisao .it-art-motif .it-motif-face rect { fill: var(--it-mint); stroke: none; }
+.it-art-daisao .it-art-motif .it-motif-face path { stroke: var(--it-mint); fill: none; }
+
+
+/* Screenshot cards (real work) — the capture is the art; everything around
+   it stays on tokens. Poster <img> by default, scroll loop <video> fades in
+   while playing (src/work-cards.js: hover on desktop, in-view on touch). */
+.it-art-shot {
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--it-hairline);
+  background: color-mix(in srgb, var(--it-cream) 7%, var(--it-ground));
+}
+.it-art-shot::after { opacity: 0.07; } /* halftone, lighter over photos */
+.it-art-shot .it-shot-poster,
+.it-art-shot .it-shot-loop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  display: block;
+}
+.it-art-shot .it-shot-loop { opacity: 0; transition: opacity 0.45s ease, transform 0.7s var(--it-ease-reveal); }
+/* gooey hover (src/gooey-cards.js): the shared canvas draws poster + loop;
+   the DOM video keeps playing underneath as the canvas's texture */
+.it-gooey { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 1; pointer-events: none; }
+.it-card.is-gooey .it-shot-loop { opacity: 0 !important; }
+.it-card.is-playing .it-shot-loop { opacity: 1; }
+.it-card.is-still .it-shot-loop { display: none; }
+.it-card:hover .it-art-shot > *,
+.it-card:focus-visible .it-art-shot > * { transform: scale(1.025); } /* gentler than the drawn art */
+
+/* pending state: the frame still looks intentional */
+.it-shot-pending {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-family: var(--it-font-mono);
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--it-cream-65);
+  white-space: nowrap;
+}
+.it-art-shot.is-pending { border: 1.5px dashed var(--it-cream-28); background: transparent; }
+.it-art-shot.is-pending::after { content: none; }
+.it-art-shot.is-pending .it-shot-poster,
+.it-art-shot.is-pending .it-shot-loop { display: none; }
+.it-art-shot.is-pending .it-shot-pending { display: block; }
+html.reduced .it-shot-loop { display: none; }
+
+/* teaser card */
+.it-card-teaser .it-card-art {
+  background: transparent;
+  border: 1.5px dashed var(--it-cream-28);
+  display: grid;
+  place-content: center;
+  gap: 1.2rem;
+  justify-items: center;
+  transition: border-color 0.4s;
+}
+.it-card-teaser .it-card-art::after { content: none; }
+.it-card-teaser:hover .it-card-art { border-color: var(--it-mint); }
+.it-teaser-tofu rect:first-child { fill: var(--it-cream); }
+.it-teaser-tofu rect:not(:first-child) { fill: var(--it-eye-dark); }
+.it-teaser-tofu path { stroke: var(--it-eye-dark); stroke-width: 2.4; stroke-linecap: round; }
+.it-teaser-tofu { transition: transform 0.5s var(--it-ease-reveal); }
+.it-card-teaser:hover .it-teaser-tofu { transform: rotate(-4deg) translateY(-3px); }
+.it-teaser-line {
+  font-family: var(--it-font-display);
+  font-size: 1.55rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.it-teaser-line em { color: var(--it-mint); }
+
+.it-card-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 1rem;
+  margin-top: 1.1rem;
+  align-items: baseline;
+}
+.it-card-index {
+  grid-row: 1 / 3;
+  font-family: var(--it-font-mono);
+  font-size: 0.7rem;
+  color: var(--it-peach);
+}
+.it-card-title {
+  font-family: var(--it-font-display);
+  font-weight: 480;
+  font-size: 1.75rem;
+  transition: color 0.3s;
+}
+.it-card:hover .it-card-title { color: var(--it-mint); }
+.it-card-tag { font-size: 0.92rem; color: var(--it-cream-65); }
+
+.it-work-progress {
+  width: min(320px, 34vw);
+  height: 2px;
+  margin-inline: var(--it-gutter);
+  background: var(--it-hairline);
+  display: none;
+}
+.it-work-progress i {
+  display: block;
+  height: 100%;
+  background: var(--it-mint);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
+/* desktop: horizontal gallery */
+@media (min-width: 900px) {
+  .it-work-track { flex-direction: row; }
+  .it-card { width: clamp(340px, 38vw, 540px); }
+  .it-work-progress { display: block; }
+  html:not(.js) .it-work-track, html.reduced .it-work-track { overflow-x: auto; padding-bottom: 1rem; }
+}
+
+/* ================= SERVICES (living bento) =================
+   Three scene windows (existing dream stills, token-graded) with a glass
+   panel resting on each, Solace / Nexora style; the cursor carries a soft
+   cream light across the glass; each window breathes with the brand aura.
+   ============================================================ */
+
+.it-services-head { max-width: 62rem; }
+.it-services-title { margin-bottom: 0.55rem; }
+/* muted second line, Nexora-style: same voice, lower volume */
+.it-services-sub {
+  font-family: var(--it-font-display);
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: clamp(1.25rem, 2.3vw, 2.05rem);
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--it-cream-50);
+}
+
+@property --mx { syntax: "<percentage>"; initial-value: 50%; inherits: false; }
+@property --my { syntax: "<percentage>"; initial-value: 35%; inherits: false; }
+
+.it-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.85rem, 1.6vw, 1.35rem);
+  margin-top: clamp(2.2rem, 5vh, 3.4rem);
+}
+
+.it-tile {
+  --mx: 50%;
+  --my: 35%;
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(380px, 37vw, 520px);
+  border-radius: var(--it-radius);
+  overflow: hidden;
+  background: var(--it-ground);
+  box-shadow: inset 0 0 0 1px var(--it-hairline);
+  transition: translate 0.7s var(--it-ease-reveal), box-shadow 0.7s;
+}
+.it-tile:hover {
+  translate: 0 -4px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--it-cream) 22%, transparent),
+    0 30px 60px -30px color-mix(in srgb, var(--it-ground) 90%, transparent);
+}
+/* the link tile: the <a> is the layout box so children stack like siblings */
+.it-tile-link {
+  position: absolute;
+  inset: 0;
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+.it-tile-link:focus-visible { outline: 2px solid var(--it-mint); outline-offset: -3px; }
+.it-tile,
+.it-tile-link {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(1rem, 1.6vw, 1.3rem);
+}
+.it-tile--care { padding: 0; }
+
+/* scene: the still, veiled toward the ground so copy always sits */
+.it-tile-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.it-tile-scene img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  scale: 1.14; /* room for the scroll drift (GSAP owns transform) */
+  filter: saturate(0.86) brightness(0.92);
+  transition: scale 1.6s var(--it-ease-reveal), filter 1.2s;
+}
+.it-tile:hover .it-tile-scene img { scale: 1.19; filter: saturate(0.95) brightness(1); }
+/* sources: the still (poster, reduced-motion and no-JS frame) and the
+   small loop. Once the canvas is live they are read, never shown. */
+.it-tile-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  pointer-events: none;
+}
+html.reduced .it-tile-video, html:not(.js) .it-tile-video { display: none; }
+.it-tile.is-art .it-tile-scene img { opacity: 0; }
+/* the drawn picture: same drift/zoom treatment the still had */
+.it-tile-art {
+  position: absolute;
+  inset: 0;
+  display: block;
+  scale: 1.08;
+  transition: scale 1.6s var(--it-ease-reveal);
+}
+.it-tile:hover .it-tile-art { scale: 1.12; }
+.it-tile-scene img, .it-tile-video { object-position: 50% 42%; }
+.it-tile-scene::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--it-ground) 34%, transparent) 0%,
+      transparent 32%,
+      color-mix(in srgb, var(--it-ground) 24%, transparent) 62%,
+      color-mix(in srgb, var(--it-ground) 78%, transparent) 100%);
+}
+.it-tile.is-art .it-tile-scene::after {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--it-ground) 55%, transparent) 0%,
+      transparent 24%,
+      transparent 64%,
+      color-mix(in srgb, var(--it-ground) 64%, transparent) 100%);
+}
+/* per-scene framing (3:4 stills, subject in the upper two thirds) */
+.it-tile--care .it-tile-scene img, .it-tile--care .it-tile-video { object-position: 50% 36%; }
+.it-tile--motion .it-tile-scene img, .it-tile--motion .it-tile-video { object-position: 50% 12%; }
+
+/* brand aura inside each window: blur 72, 26s turn, screen, breathing
+   0.34–0.5 (the locked parameters, unchanged) */
+.it-tile-aura {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 92%;
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg,
+    color-mix(in srgb, var(--it-mint) 55%, transparent),
+    color-mix(in srgb, var(--it-peach) 45%, transparent) 38%,
+    transparent 58%,
+    color-mix(in srgb, var(--it-mint) 40%, transparent) 80%,
+    color-mix(in srgb, var(--it-mint) 55%, transparent));
+  filter: blur(var(--it-aura-blur)) saturate(0.8);
+  mix-blend-mode: screen;
+  opacity: var(--it-aura-opacity-min);
+  animation:
+    it-tile-aura-turn var(--it-aura-rotation) linear infinite,
+    it-tile-aura-breathe 9s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+.it-tile--motion .it-tile-aura { top: 36%; width: 110%; }
+@keyframes it-tile-aura-turn { to { rotate: 359deg; } }
+@keyframes it-tile-aura-breathe {
+  from { opacity: var(--it-aura-opacity-min); }
+  to { opacity: var(--it-aura-opacity-max); }
+}
+
+/* cursor light: a soft cream pool that follows the pointer across the glass */
+.it-tile-light {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: radial-gradient(
+    38% 34% at var(--mx) var(--my),
+    color-mix(in srgb, var(--it-cream) 11%, transparent) 0%,
+    transparent 100%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.6s, --mx 0.18s linear, --my 0.18s linear;
+}
+.it-tile:hover .it-tile-light { opacity: 1; }
+
+/* corner labels (Max Reed / Nexora micro type) */
+.it-tile-top {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  font-family: var(--it-font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+/* the index sits on its own small ground pill so it reads over any art */
+.it-tile-index {
+  color: var(--it-peach);
+  padding: 0.42em 0.8em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--it-ground) 72%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--it-cream) 9%, transparent);
+}
+
+/* the glass panel the copy rests on */
+.it-tile-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 11.2rem; /* same footprint on all three, whatever the copy does */
+  border-radius: calc(var(--it-radius) - 7px);
+  padding: 1.15rem 1.2rem 1.15rem;
+  transition: translate 0.7s var(--it-ease-reveal);
+}
+/* footer row: mono detail line, or the pill on the linked tile; pinned to
+   the bottom so the three panels share one baseline */
+.it-tile-foot {
+  display: block;
+  margin-top: auto;
+  padding-top: 0.95rem;
+  font-family: var(--it-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--it-cream-50);
+}
+.it-tile:hover .it-tile-panel { translate: 0 -2px; }
+.it-tile-title {
+  font-family: var(--it-font-display);
+  font-optical-sizing: auto;
+  font-weight: 470;
+  font-size: clamp(1.45rem, 2vw, 1.9rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.5rem;
+  transition: color 0.4s;
+}
+.it-tile:hover .it-tile-title { color: var(--it-mint); }
+.it-tile-desc {
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--it-cream-80);
+  max-width: 30ch;
+}
+/* Velorah liquid-glass pill */
+.it-tile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  margin-top: -0.35rem;
+  padding: 0.5em 1.05em;
+  border-radius: 999px;
+  font-family: var(--it-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--it-cream);
+  background: color-mix(in srgb, var(--it-cream) 4%, transparent);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--it-cream) 22%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 16%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--it-cream) 10%, transparent);
+  transition: background-color 0.4s, box-shadow 0.4s, gap 0.4s;
+}
+.it-tile:hover .it-tile-pill {
+  gap: 0.7em;
+  background: color-mix(in srgb, var(--it-mint) 14%, transparent);
+  box-shadow:
+    inset 0 1px 1px color-mix(in srgb, var(--it-cream) 30%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 30%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--it-mint) 30%, transparent);
+}
+
+/* the little one keeps watch over the field (care tile) */
+.it-tile-peek {
+  position: absolute;
+  z-index: 0;
+  right: 7%;
+  bottom: 36%;
+  width: 30%;
+  max-width: 150px;
+  translate: 0 14%;
+  filter: drop-shadow(0 12px 28px color-mix(in srgb, var(--it-ground) 70%, transparent));
+  transition: translate 0.9s var(--it-ease-reveal);
+  pointer-events: none;
+}
+.it-tile-peek img { width: 100%; animation: it-tile-peek-float 5.5s ease-in-out infinite; }
+/* blink: the closed-eyes frame sits on top and flickers in for a beat
+   every few seconds (the hero cube's calm cadence, loop-sized) */
+.it-tile-peek-blink {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: it-tile-peek-float 5.5s ease-in-out infinite, it-tile-peek-blink 6.4s steps(1, end) infinite !important;
+}
+@keyframes it-tile-peek-blink { 0%, 100% { opacity: 0; } 61% { opacity: 1; } 65% { opacity: 0; } 84% { opacity: 1; } 87% { opacity: 0; } }
+.it-tile:hover .it-tile-peek { translate: 0 0; }
+@keyframes it-tile-peek-float { 50% { transform: translateY(-7px) rotate(-2deg); } }
+
+html.reduced .it-tile-aura, html.reduced .it-tile-peek img { animation: none !important; }
+html.reduced .it-tile-aura { opacity: 0.4; }
+@media (prefers-reduced-motion: reduce) {
+  .it-tile-aura, .it-tile-peek img { animation: none !important; }
+  .it-tile-scene img, .it-tile, .it-tile-panel, .it-tile-peek { transition: none; }
+}
+
+/* ================= DREAM (Asme liquid-glass, token-translated) ================= */
+
+/* liquid glass — Asme pattern rebuilt from tokens only:
+   dark ground-glass body, cream top highlight, mint lower edge */
+.it-glass {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--it-ground) 52%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--it-cream) 14%, transparent);
+}
+.it-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--it-cream) 42%, transparent) 0%,
+    color-mix(in srgb, var(--it-cream) 14%, transparent) 20%,
+    transparent 40%,
+    transparent 60%,
+    color-mix(in srgb, var(--it-mint) 14%, transparent) 80%,
+    color-mix(in srgb, var(--it-mint) 38%, transparent) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.it-dream-title { max-width: none; }
+.it-dream-title-top { display: block; }
+.it-dream-title-set {
+  display: block;
+  font-size: clamp(3.4rem, 7vw, 6.4rem);
+  line-height: 1.02;
+  margin-top: 0.08em;
+}
+.it-dream-sub {
+  max-width: 46ch;
+  color: var(--it-cream-65);
+  margin-bottom: clamp(2.4rem, 5vh, 3.6rem);
+}
+
+/* sleepy tofu: desktop motion mode only (JS drives wake + journey) */
+.it-dream-sleeper { display: none; }
+.it-dream-sleeper .it-sleeper-body rect:first-child { fill: var(--it-cream); }
+.it-dream-sleeper .it-sleeper-eyes-sleep rect,
+.it-dream-sleeper .it-sleeper-eyes-dreamy > rect:not(.it-sleeper-sparkle) { fill: var(--it-eye-dark); }
+.it-dream-sleeper .it-sleeper-sparkle { fill: var(--it-cream); }
+.it-dream-sleeper .it-sleeper-eyes-dreamy { visibility: hidden; }
+.it-dream-sleeper .it-sleeper-mouth { fill: var(--it-eye-dark); }
+.it-dream-sleeper .it-sleeper-blush { fill: var(--it-peach); opacity: 0.55; }
+.it-dream-sleeper .it-sleeper-bubble {
+  fill: color-mix(in srgb, var(--it-mint) 14%, transparent);
+  stroke: var(--it-mint);
+  stroke-width: 1.2;
+}
+.it-dream-sleeper .it-z {
+  font-family: var(--it-font-mono);
+  fill: var(--it-mint);
+  opacity: 0;
+}
+.it-dream-sleeper .it-z1 { font-size: 9px; }
+.it-dream-sleeper .it-z2 { font-size: 11px; }
+.it-dream-sleeper .it-z3 { font-size: 13px; }
+.it-sleeper-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}
+
+/* media frames — JS drives a slow scroll drift on the img inside */
+.it-dream-media {
+  overflow: hidden;
+  border-radius: var(--it-radius);
+  background: color-mix(in srgb, var(--it-cream) 5%, var(--it-ground));
+}
+.it-dream-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  will-change: transform;
+}
+
+/* featured dreamscape with glass overlays */
+.it-dream-feature {
+  position: relative;
+  border-radius: var(--it-radius);
+}
+.it-dream-feature .it-dream-media { aspect-ratio: 16 / 9; max-height: 78vh; }
+.it-dream-feature .it-dream-media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--it-ground) 55%, transparent) 0%,
+    transparent 38%
+  );
+  pointer-events: none;
+}
+.it-dream-feature .it-dream-media { position: relative; }
+
+.it-dream-card {
+  position: absolute;
+  left: clamp(1rem, 2.6vw, 2.4rem);
+  bottom: clamp(1rem, 2.6vw, 2.4rem);
+  max-width: 26rem;
+  border-radius: 18px;
+  padding: 1.5rem 1.7rem;
+}
+.it-dream-card p:last-child { color: var(--it-cream); font-size: 0.97rem; }
+.it-dream-card em {
+  font-family: var(--it-font-display);
+  color: var(--it-mint);
+}
+
+.it-dream-label {
+  font-family: var(--it-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--it-cream-50);
+  margin-bottom: 0.8rem;
+}
+
+.it-dream-more {
+  position: absolute;
+  right: clamp(1rem, 2.6vw, 2.4rem);
+  bottom: clamp(1rem, 2.6vw, 2.4rem);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  border-radius: 999px;
+  padding: 0.85em 1.7em;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--it-cream);
+  transition: transform 0.3s var(--it-ease-reveal), background-color 0.3s;
+}
+.it-dream-more:hover {
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--it-mint) 14%, color-mix(in srgb, var(--it-ground) 52%, transparent));
+}
+
+/* --- pinned scroll story wrappers (neutral by default: mobile /
+   reduced / no-JS render the stacked layout exactly as before) --- */
+.it-dream-scene, .it-dream-stage { display: block; }
+
+.it-dream-veil {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--it-cream) 88%, var(--it-peach));
+  opacity: 0;
+  pointer-events: none;
+}
+.it-dream-eyes {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -58%;
+  width: 62px;
+  opacity: 0;
+  pointer-events: none;
+}
+/* galaxy tofu video — floats over the section, driven by JS (beside copy →
+   center → fill → dissolve). screen blend melts the dark ground away so it
+   reads as a glowing tofu, not a box. GSAP owns transform (xPercent/yPercent
+   center + x/y/scale) and opacity. hidden until the desktop story turns it on. */
+.it-dream-tofu {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(1120px, 90vw, 84vh);
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  opacity: 0;
+  display: none;
+  pointer-events: none;
+  z-index: 4;
+  will-change: transform, opacity;
+}
+.it-dream-eyes rect { fill: var(--it-eye-dark); }
+.it-dream-eyes .it-eye-sparkle { fill: var(--it-cream); }
+.it-dream-eyes .it-dream-mouth {
+  fill: none;
+  stroke: var(--it-eye-dark);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.it-dream-x-stage { display: none; }
+
+@media (min-width: 900px) {
+  html.js:not(.reduced) .it-dream-stage {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* visual duplicate of .it-dream-x — font metrics must match exactly */
+  html.js:not(.reduced) .it-dream-x-stage {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.2rem, 2.4vw, 2.6rem);
+    font-family: var(--it-font-display);
+    font-weight: 440;
+    font-size: clamp(2rem, 3.8vw, 3.3rem);
+    line-height: 1.08;
+    pointer-events: none;
+  }
+  html.js:not(.reduced) .it-dream-x-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 30ch;
+  }
+  html.js:not(.reduced) .it-dream-x-block {
+    margin-top: 1.6rem;
+    font-family: var(--it-font-body);
+    font-weight: 400;
+  }
+  html.js:not(.reduced) .it-dream-x-block p:last-child {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--it-cream-80);
+    max-width: 34ch;
+  }
+  html.js:not(.reduced) .it-dream-x-glyph {
+    color: var(--it-cream-28);
+    font-style: italic;
+    align-self: flex-start;
+    margin-top: 0.15em;
+  }
+  html.js:not(.reduced) .it-dream-feature .it-dream-media { will-change: clip-path; }
+  /* duo text already told its story on the stage — hide visually, keep for AT */
+  html.js:not(.reduced) .it-dream-duo-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    margin: 0;
+  }
+  /* duo becomes a wide cinematic closing band */
+  html.js:not(.reduced) .it-dream-duo {
+    grid-template-columns: 1fr;
+    margin-top: clamp(2.5rem, 5vh, 4.5rem);
+  }
+  html.js:not(.reduced) .it-dream-duo-media { aspect-ratio: 21 / 9; }
+  /* sleepy tofu placement beside the heading */
+  html.js:not(.reduced) .it-dream-sleeper {
+    display: block;
+    position: absolute;
+    top: calc(var(--it-section-pad) + 3rem);
+    right: clamp(6vw, 12vw, 16vw);
+    width: clamp(120px, 13vw, 180px);
+    z-index: 1;
+  }
+}
+
+/* wonder × craft duo */
+.it-dream-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2.5rem, 5vw, 5.5rem);
+  align-items: center;
+  margin-top: clamp(4rem, 9vh, 7rem);
+}
+.it-dream-duo-media { aspect-ratio: 4 / 3; }
+.it-dream-x {
+  font-family: var(--it-font-display);
+  font-weight: 440;
+  font-size: clamp(2rem, 3.8vw, 3.3rem);
+  line-height: 1.08;
+  margin-bottom: 2.2rem;
+}
+.it-dream-x em { color: var(--it-cream-28); }
+.it-dream-block p:last-child { color: var(--it-cream-80); max-width: 46ch; }
+.it-dream-rule {
+  border: 0;
+  border-top: 1px solid var(--it-hairline);
+  margin: 1.9rem 0;
+}
+
+/* svg transform anchors for scale pops */
+.it-intro-bloom .it-bean {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ================= STUDIO ================= */
+
+.it-studio {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  align-items: center;
+  gap: clamp(2.5rem, 6vw, 6rem);
+}
+.it-quote {
+  font-family: var(--it-font-display);
+  font-weight: 430;
+  font-size: clamp(1.9rem, 3.8vw, 3.3rem);
+  line-height: 1.18;
+  max-width: 20ch;
+}
+.it-quote em:first-of-type { color: var(--it-peach); }
+.it-quote em:last-of-type { color: var(--it-mint); }
+.it-studio-body {
+  margin-top: 1.8rem;
+  max-width: 50ch;
+  color: var(--it-cream-80);
+}
+.it-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 2rem;
+}
+.it-chips li {
+  font-family: var(--it-font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--it-cream-80);
+  border: 1px solid color-mix(in srgb, var(--it-cream) 38%, transparent);
+  border-radius: 999px;
+  padding: 0.55em 1.1em;
+}
+
+.it-studio-mascot { position: relative; }
+.it-mascot-squish { position: relative; z-index: 1; transform-origin: 50% 85%; }
+
+/* deploy vignette: tiny glass terminal the mascot supervises */
+.it-deploy {
+  position: absolute; left: -4%; bottom: 0;
+  width: min(280px, 64%);
+  border-radius: 12px; padding: 0.7rem 0.9rem 0.8rem;
+  rotate: -2deg; z-index: 2;
+}
+.it-deploy-bar { display: flex; gap: 5px; margin-bottom: 0.5rem; }
+.it-deploy-bar i { width: 7px; height: 7px; border-radius: 50%; background: color-mix(in srgb, var(--it-cream) 22%, transparent); }
+.it-deploy-body {
+  margin: 0; font-family: var(--it-font-mono);
+  font-size: 0.82rem; line-height: 1.65; letter-spacing: 0.03em;
+  color: var(--it-cream-80); white-space: pre-wrap; min-height: 3.7em;
+}
+.it-dep-line { display: block; }
+.it-dep-dim { color: var(--it-cream-65); }
+.it-dep-ok { color: var(--it-mint); }
+.it-dep-caret { display: inline-block; width: 0.55em; height: 1em; background: var(--it-mint); vertical-align: -0.15em; animation: it-caret 1.1s steps(1) infinite; }
+@keyframes it-caret { 50% { opacity: 0; } }
+
+/* the calm tofu floats gently (the old gif had motion baked in) */
+.it-studio-mascot .it-mascot-media { animation: it-mascot-float 7s ease-in-out infinite alternate; }
+@keyframes it-mascot-float { from { transform: translateY(-6px); } to { transform: translateY(8px); } }
+
+.it-studio-mascot .it-mascot-media {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 470px);
+  margin-inline: auto;
+}
+.it-aura-soft {
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(48vmin, 520px);
+}
+.it-aura-soft .it-aura-spin { animation-name: it-aura-rotate; animation-duration: var(--it-aura-rotation); animation-timing-function: linear; animation-iteration-count: infinite; opacity: 0.58; }
+
+/* ================= CTA ================= */
+
+.it-cta {
+  text-align: center;
+  padding-block: calc(var(--it-section-pad) * 1.25);
+  overflow: hidden;
+}
+.it-cta .it-aura-cta {
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(70vmin, 760px);
+  z-index: 0;
+}
+.it-cta > :not(.it-aura-cta) { position: relative; z-index: 3; } /* reads over the returning cube (z 2) */
+.it-cta-title { margin-inline: auto; }
+.it-cta .it-eyebrow { justify-content: center; } /* eyebrow is a flex row; text-align can't center it */
+.it-cta-mascot { margin: 0 auto 1.2rem; width: clamp(95px, 11.5vw, 155px); overflow: visible; }
+.it-cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 3rem;
+}
+.it-cta-micro {
+  margin-top: 2.2rem;
+  font-family: var(--it-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--it-cream-65);
+}
+.it-cta-micro span { white-space: nowrap; } /* line breaks land between phrases, never before a dot */
+.it-magnetic { will-change: transform; }
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 1100px) {
+  .it-hero-text { max-width: min(640px, 64vw); }
+  .it-cube { width: min(42vw, 480px); }
+  .it-cube.is-fixed { width: min(52vw, 640px); }
+}
+
+@media (max-width: 899px) {
+  .it-hero {
+    display: flex;
+    flex-direction: column;
+    padding-top: 5.6rem;
+  }
+  /* desktop-like composition (Dennis, Jul 2026): swirl recentered, cube
+     pinned to the vortex base, copy bottom-anchored over the veil */
+  /* zoomed-out swirl (Dennis, Jul 2026): the frame is sized/positioned by
+     JS (placeMobile) instead of object-fit cover, so far more of the
+     vortex is visible while the glow stays pinned under the cube. The
+     values below are the no-JS / reduced fallback (≈ a 412×900 phone). */
+  .it-hero-cosmos img,
+  .it-hero-video {
+    position: absolute;
+    width: 280%;
+    height: auto;
+    max-width: none; /* the global img reset would clamp the zoomed frame */
+    max-height: none;
+    aspect-ratio: 2444 / 1376; /* keep the video honest before metadata */
+    left: -126%; /* 50% − 0.63 × 280% → glow x on the center line */
+    top: 0;
+    /* dissolve the frame's bottom edge into the ground — the zoomed-out
+       frame no longer reaches the hero bottom */
+    -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 98%);
+    mask-image: linear-gradient(to bottom, #000 78%, transparent 98%);
+  }
+  .it-cube {
+    /* pinned to the glow point — JS sets left/top; this is the fallback */
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    right: auto;
+    translate: -50% -50%;
+    width: min(56vw, 300px);
+    margin: 0;
+  }
+  .it-hero .it-aura {
+    top: 48%;
+    left: 50%;
+    right: auto;
+    translate: -50% -50%;
+    width: min(64vmin, 440px);
+  }
+  .it-hero-cloud { top: 20%; width: min(70vw, 360px); }
+  .it-hero-text {
+    position: static;
+    translate: none; /* base rule centers with 0 -50% — kills bottom-anchoring here */
+    max-width: none;
+    margin-top: auto;
+    padding: 2rem var(--it-gutter) 3.6rem;
+  }
+  /* tighter type so the copy shares the screen with the glow-pinned cube */
+  .it-hero-text .it-display { font-size: clamp(2.3rem, 10vw, 2.9rem); }
+  .it-hero-eyebrow { margin-bottom: 0.6rem; }
+  .it-hero-text .it-hero-sub { margin-top: 0.85rem; }
+  .it-hero-actions { margin-top: 1.5rem; }
+  .it-scroll-cue { display: none; }
+  .it-sprouts { opacity: 0.55; }
+
+  .it-work-pin { min-height: 0; padding-top: var(--it-section-pad); }
+  .it-work-head { margin-bottom: 1rem; }
+  .it-work-hint { display: none; }
+
+  /* living bento stacks: one window per row, shorter so the stack scans */
+  .it-tiles { grid-template-columns: 1fr; }
+  .it-tile { min-height: clamp(420px, 108vw, 480px); }
+  .it-tile-peek { width: 24%; bottom: 42%; translate: 0 0; }
+  .it-tile-top { font-size: 0.62rem; }
+  .it-tile-panel { min-height: 0; }
+
+
+  /* dream duo (reduced/no-JS fallback only now): single column */
+  .it-dream-duo { grid-template-columns: 1fr; }
+
+  .it-studio { grid-template-columns: 1fr; }
+  .it-studio-mascot .it-mascot-media { width: min(62vw, 330px); }
+
+  /* soybean pod rides beside the "soybeans" statement (Dennis, mobile pass) */
+  .it-intro-bloom {
+    position: absolute;
+    top: calc(var(--it-section-pad) + 2.4rem);
+    right: var(--it-gutter);
+    width: 62px;
+    margin: 0;
+  }
+  .it-intro .it-statement { padding-right: 74px; } /* wrap clear of the pod */
+  /* room for the visiting tofu below the copy (Dennis sketch) */
+  .it-intro { padding-bottom: calc(var(--it-section-pad) + 180px); }
+  /* soak → press → build strip: centered, scaled up so the labels read */
+  .it-intro-doodle {
+    width: min(86vw, 340px);
+    margin-inline: auto;
+  }
+  .it-intro-doodle .it-dd-label { font-size: 13px; }
+
+  /* scroll journey (like desktop): the cube leaves the vortex and settles
+     into Hello's negative space — width must beat the desktop is-fixed rule */
+  .it-cube.is-fixed {
+    position: fixed;
+    top: 48%;
+    left: 50%;
+    width: min(56vw, 300px);
+  }
+}
+
+@media (max-width: 480px) {
+  .it-hero-text { padding-bottom: 3.4rem; }
+  .it-btn-big { width: 100%; justify-content: center; }
+}
+
+/* reduced motion: freeze ambient layers */
+@media (prefers-reduced-motion: reduce) {
+  .it-aura-spin, .it-sway, .it-marquee-track, .it-scroll-line::after, .it-avail-dot {
+    animation: none !important;
+  }
+  .it-aura-spin { opacity: 0.4; }
+  .it-statement .it-sw { opacity: 1; }
+  /* imagination motes never run; leave a still, faint cloud */
+  .it-hero-motes { display: none; }
+  .it-hero-cloud { animation: none; opacity: 0.16; }
+}
+
+/* ================= AFTER DARK — ported dream sequence ================= */
+/* default (mobile / reduced / no-JS): sequence hidden, duo fallback shows */
+.it-dream-scene { display: none; }
+.it-dream-lead { display: none; }
+
+/* dream scene styles now apply at ALL widths (mobile pass, Jul 2026) —
+   the html.js:not(.reduced) gates below keep the duo as the reduced/no-JS
+   fallback everywhere. Mobile layout deltas follow after this block. */
+html.js:not(.reduced) #dream > .it-eyebrow,
+  html.js:not(.reduced) .it-dream-title,
+  html.js:not(.reduced) .it-dream-sub { display: none; }
+  html.js:not(.reduced) .it-dream-duo { display: none; }
+
+  /* the stage is full-bleed 100svh — section padding here just reads as a
+     dead black gap between Process and the pin, so collapse it */
+  html.js:not(.reduced) .it-dream { padding-block: 0; }
+
+  html.js:not(.reduced) .it-dream-scene { display: block; }
+  html.js:not(.reduced) .it-dream-stage {
+    position: relative; height: 100svh; min-height: 640px; overflow: hidden;
+    display: block; isolation: isolate; border-radius: 0;
+    /* full-bleed: break out of the section padding so the nebula is edge-to-edge */
+    width: 100vw; margin-inline: calc(50% - 50vw);
+  }
+
+  /* remastered footage carries real detail now — slightly less blur/dim */
+  .it-dream-cosmos { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; opacity:0; filter:brightness(.55) saturate(1.06) blur(1.5px); }
+  /* the og calm: quiet starfield clouds for the sleeping phase, heavier veil */
+  .it-dream-cosmos-calm { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:1; opacity:0; filter:brightness(.5) saturate(1.06) blur(2px); }
+
+  /* pure-CSS nebula for the wonder × craft beat: aura blobs on the locked
+     parameters (72px blur, 0.34–0.5 breathe, screen blend), offset delays
+     so they flash asynchronously; slow elliptical drift */
+  .it-dream-blobs { position:absolute; inset:0; z-index:1; opacity:0; pointer-events:none; }
+  .it-db { position:absolute; border-radius:50%; filter:blur(var(--it-aura-blur)); mix-blend-mode:screen; opacity:var(--it-aura-opacity-min); animation:it-aura-breathe 7s ease-in-out infinite alternate, it-db-drift 24s ease-in-out infinite alternate; }
+  .it-db-1 { width:40vw; height:33vw; left:3%; top:8%; background:radial-gradient(circle, color-mix(in srgb, var(--it-mint) 82%, transparent), transparent 72%); }
+  .it-db-2 { width:36vw; height:29vw; right:1%; top:26%; background:radial-gradient(circle, color-mix(in srgb, var(--it-peach) 76%, transparent), transparent 72%); animation-delay:-3s,-9s; }
+  .it-db-3 { width:31vw; height:26vw; left:23%; bottom:3%; background:radial-gradient(circle, color-mix(in srgb, var(--it-peach) 60%, transparent), transparent 72%); animation-delay:-5.2s,-16s; }
+  .it-db-4 { width:27vw; height:22vw; right:21%; bottom:12%; background:radial-gradient(circle, color-mix(in srgb, var(--it-mint) 64%, transparent), transparent 72%); animation-delay:-1.8s,-12s; }
+  @keyframes it-db-drift { from { transform:translate(0,0) scale(1); } to { transform:translate(4vw,-3vw) scale(1.12); } }
+  .it-dream-cosmos-veil { position:absolute; inset:0; z-index:2; opacity:0; pointer-events:none; background:radial-gradient(120% 100% at 50% 46%, transparent 26%, rgba(10,18,14,.72) 100%); }
+  .it-dream-cvback { position:absolute; inset:0; width:100%; height:100%; z-index:3; }
+  /* visible during the scroll-in approach (opacity 1, scale matches the JS
+     u=0 pose) so the sleeping tofu greets you instead of a black void.
+     pokeable — same squash physics as the hero cube (see motion.js) */
+  .it-dream-still { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%) scale(.86); width:min(400px,19vw); aspect-ratio:1; z-index:4; opacity:1; cursor:pointer; }
+  /* dreamy idle wander — zero-g drift driven by GSAP (motion.js picks a new
+     random drift target each leg, so the path never reads as a loop) */
+  .it-dream-still-float { display:block; width:100%; height:100%; will-change:transform; }
+  .it-dream-still img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 0 34px rgba(158,217,191,.45)) hue-rotate(-14deg) saturate(1.12); animation:it-dream-hue 16s ease-in-out infinite; }
+  @keyframes it-dream-hue { 0%,100%{filter:drop-shadow(0 0 34px rgba(158,217,191,.45)) hue-rotate(-14deg) saturate(1.12) brightness(1.02)} 50%{filter:drop-shadow(0 0 46px rgba(243,181,156,.5)) hue-rotate(24deg) saturate(1.3) brightness(1.08)} }
+  .it-dream-cvfront { position:absolute; inset:0; width:100%; height:100%; z-index:5; pointer-events:none; }
+  .it-dream-alpha { position:absolute; left:50%; top:44%; transform:translate(-50%,-50%); width:min(720px,42vw); aspect-ratio:1; object-fit:contain; opacity:0; z-index:6; pointer-events:none; }
+
+  /* display-only overlays must never eat the tofu's pointer events.
+     38% max-width keeps the lockup clear of the tofu on narrow desktops */
+  .it-dream-lead { display:block; position:absolute; left:9%; top:50%; transform:translateY(-50%); max-width:38%; z-index:7; opacity:1; pointer-events:none; }
+  .it-dream-lead .it-eyebrow { color:var(--it-peach); margin:0 0 1rem; }
+  /* two-line lockup ("Ideas don't sleep." / "They set.") — a free wrap let
+     "They" spill over the bright tofu and vanish into it on smaller screens.
+     the shadow keeps ring particles from cutting through the letterforms */
+  .it-dream-lead-title { font-family:var(--it-font-display); font-weight:600; font-size:clamp(1.9rem,3.6vw,4rem); line-height:1.06; color:var(--it-cream); margin:0; text-shadow:0 2px 30px rgba(10,18,14,.85); }
+  .it-dream-lead-title em { display:block; font-style:italic; font-weight:400; color:var(--it-mint); }
+
+  /* the × sits on the ring's axis just above the tofu, so the eye reads
+     "wonder × craft" straight across the row once both cards are in */
+  .it-dream-x-glyph { position:absolute; left:50%; top:27%; transform:translate(-50%,-50%); z-index:7; font-family:var(--it-font-display); font-style:normal; font-size:clamp(1.6rem,3vw,2.6rem); color:var(--it-mint); opacity:0; pointer-events:none; }
+
+  /* flank the tofu, vertically centered on the ring (44%); JS keeps the
+     translateY(-50%) centering in its transform so both cards line up.
+     reset the retired meadow-card's left/right/bottom so height is content-only. */
+  .it-dream-card { position:absolute; top:44%; left:auto; right:auto; bottom:auto; inset-block-end:auto;
+    max-width:none; width:min(300px,22vw); height:auto; padding:1.35rem 1.4rem; border-radius:18px; z-index:7; opacity:0; }
+  .it-dream-card[data-side="w"] { right:60%; left:auto; text-align:right; }
+  .it-dream-card[data-side="c"] { left:60%; right:auto; }
+  .it-dream-card[data-side="w"] .it-dream-card-ic { margin-left:auto; }
+  .it-dream-card-ic { width:40px; height:40px; margin-bottom:.7rem; display:block; }
+
+  /* thinner glass than the shared .it-glass: the galaxy ring should drift
+     visibly behind these two cards — present, but not poster-clear */
+  .it-dream-card.it-glass {
+    background: color-mix(in srgb, var(--it-ground) 32%, transparent);
+    -webkit-backdrop-filter: blur(7px);
+    backdrop-filter: blur(7px);
+  }
+
+  /* wonder breathes mint, craft breathes peach — inner glow on the locked
+     aura band (0.34–0.5, 9s alternate); screen blend so it reads as light */
+  .it-dream-card::after { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; mix-blend-mode:screen; opacity:var(--it-aura-opacity-min); animation:it-aura-breathe 9s ease-in-out infinite alternate; }
+  .it-dream-card[data-side="w"]::after { background:radial-gradient(90% 100% at 72% 16%, color-mix(in srgb, var(--it-mint) 26%, transparent), transparent 72%); }
+  .it-dream-card[data-side="c"]::after { background:radial-gradient(90% 100% at 28% 16%, color-mix(in srgb, var(--it-peach) 28%, transparent), transparent 72%); }
+
+  /* living glass: the border gradient drifts on a ~22s alternate cycle —
+     slow enough to never read as "an animation"; no comet, no loop-chase */
+  .it-dream-card.it-glass::before { background-size:100% 260%; animation:it-border-drift 22s ease-in-out infinite alternate; }
+
+  /* border pulse: each card breathes its own accent at the edge, offset
+     half a cycle so the two cards trade the light back and forth */
+  .it-dream-card[data-side="w"] { animation:it-card-pulse-w 7s ease-in-out infinite alternate; }
+  .it-dream-card[data-side="c"] { animation:it-card-pulse-c 7s ease-in-out infinite alternate; animation-delay:-3.5s; }
+  @keyframes it-card-pulse-w {
+    from { box-shadow: 0 0 20px -8px color-mix(in srgb, var(--it-mint) 28%, transparent), inset 0 1px 1px color-mix(in srgb, var(--it-cream) 14%, transparent); }
+    to   { box-shadow: 0 0 38px -4px color-mix(in srgb, var(--it-mint) 60%, transparent), inset 0 1px 1px color-mix(in srgb, var(--it-cream) 14%, transparent); }
+  }
+  @keyframes it-card-pulse-c {
+    from { box-shadow: 0 0 20px -8px color-mix(in srgb, var(--it-peach) 28%, transparent), inset 0 1px 1px color-mix(in srgb, var(--it-cream) 14%, transparent); }
+    to   { box-shadow: 0 0 38px -4px color-mix(in srgb, var(--it-peach) 58%, transparent), inset 0 1px 1px color-mix(in srgb, var(--it-cream) 14%, transparent); }
+  }
+
+  /* trailing glow: a bright head in the card's own accent with a tail
+     hinting the sibling color (wonder × craft, woven). Sweeps around and
+     BACK (alternate) — a wandering light, not a 360° spinner */
+  .it-dream-card-trail {
+    position:absolute; inset:0; border-radius:inherit; padding:1.6px; pointer-events:none;
+    -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite:xor;
+    mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite:exclude;
+    animation:it-trail 16s ease-in-out infinite alternate;
+  }
+  .it-dream-card[data-side="w"] .it-dream-card-trail {
+    background:conic-gradient(from var(--it-tr),
+      transparent 0turn, transparent .70turn,
+      color-mix(in srgb, var(--it-peach) 55%, transparent) .82turn,
+      color-mix(in srgb, var(--it-mint) 95%, transparent) .92turn,
+      transparent .98turn);
+  }
+  .it-dream-card[data-side="c"] .it-dream-card-trail {
+    background:conic-gradient(from var(--it-tr),
+      transparent 0turn, transparent .70turn,
+      color-mix(in srgb, var(--it-mint) 50%, transparent) .82turn,
+      color-mix(in srgb, var(--it-peach) 95%, transparent) .92turn,
+      transparent .98turn);
+    animation-delay:-8s;
+  }
+  @keyframes it-trail { from { --it-tr:0deg; } to { --it-tr:360deg; } }
+  /* the payload words: bigger, and lit in their card's accent — cream at the
+     root so they stay readable, tipping into mint / peach at the tail */
+  .it-dream-word { display:block; font-family:var(--it-font-display); font-style:italic; font-size:clamp(2rem,3.4vw,2.9rem); line-height:1.1; margin-bottom:.5rem; background-clip:text; -webkit-background-clip:text; color:transparent; }
+  .it-dream-card[data-side="w"] .it-dream-word { background-image:linear-gradient(115deg, var(--it-cream) 18%, var(--it-mint) 88%); }
+  .it-dream-card[data-side="c"] .it-dream-word { background-image:linear-gradient(115deg, var(--it-peach) 12%, var(--it-cream) 82%); }
+  .it-dream-card .it-dream-label { margin-bottom:.55rem; }
+  .it-dream-card p { margin:0; font-size:clamp(.86rem,1.05vw,.98rem); line-height:1.55; color:var(--it-cream-80); }
+
+  .it-spr-stem { fill:none; stroke:var(--it-cream); stroke-width:1.7; stroke-linecap:round; opacity:.5; }
+  .it-spr-leaf { fill:color-mix(in srgb,var(--it-mint) 52%, var(--it-ground)); stroke:var(--it-mint); stroke-width:1.4; transform-box:fill-box; transform-origin:0% 100%; }
+  .it-spr-l { animation:it-spray-l 4.2s ease-in-out infinite; }
+  .it-spr-r { transform-origin:100% 100%; animation:it-spray-r 4.2s ease-in-out infinite; }
+  @keyframes it-spray-l { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+  @keyframes it-spray-r { 0%,100%{transform:rotate(4deg)} 50%{transform:rotate(-4deg)} }
+  .it-spr-seed { fill:var(--it-peach); transform-box:fill-box; transform-origin:center; animation:it-seed-rise 4.2s ease-in-out infinite; }
+  @keyframes it-seed-rise { 0%,100%{transform:translateY(0);opacity:.3} 50%{transform:translateY(-3px);opacity:.9} }
+  /* mini tofu press: the screw eases down and back on a slow breath;
+     mint whey-drips at the sides stay static */
+  .it-prs-line { fill:none; stroke:var(--it-cream); stroke-width:1.7; stroke-linecap:round; opacity:.78; }
+  .it-prs-screw { animation:it-prs-press 3.6s ease-in-out infinite alternate; }
+  .it-prs-block { fill:color-mix(in srgb, var(--it-peach) 42%, var(--it-ground)); stroke:var(--it-peach); stroke-width:1.4; }
+  .it-prs-drip { fill:none; stroke:var(--it-mint); stroke-width:1.3; stroke-linecap:round; opacity:.55; }
+  @keyframes it-prs-press { from { transform:translateY(0); } to { transform:translateY(1.6px); } }
+
+  .it-dream-bloom { position:absolute; left:50%; bottom:18%; width:56%; aspect-ratio:2/1; transform:translate(-50%,20%); z-index:7; pointer-events:none; opacity:0; background:radial-gradient(closest-side, rgba(158,217,191,.26), rgba(243,181,156,.12) 45%, transparent 72%); filter:blur(10px); }
+  .it-dream-punch { position:absolute; left:50%; bottom:14%; transform:translateX(-50%); text-align:center; z-index:8; width:88%; font-family:var(--it-font-display); font-weight:600; font-size:clamp(2.2rem,5.5vw,4.6rem); line-height:1.04; color:var(--it-cream); opacity:0; text-shadow:0 2px 40px rgba(10,18,14,.9); pointer-events:none; }
+  .it-dream-flow { font-style:italic; font-weight:400; background:linear-gradient(100deg,#9ed9bf 0%,#f3b59c 28%,#f1ead9 52%,#9ed9bf 78%,#f3b59c 100%); background-size:300% 100%; -webkit-background-clip:text; background-clip:text; color:transparent; animation:it-dream-flow 7s linear infinite; }
+  @keyframes it-dream-flow { to { background-position:300% 0; } }
+
+
+/* --- mobile layout for the pinned dream scene (Dennis, Jul 2026) ---
+   cards stack above / below the sleeping tofu instead of flanking it.
+   JS owns each card's transform (translate(Xpx, calc(-50% + Ypx)) rotate)
+   so horizontal centering must come from left + margin, never translate. */
+@media (max-width: 899px) {
+  /* group centered at 50% on mobile (ring cy in motion.js matches) */
+  .it-dream-still { width: min(300px, 54vw); top: 50%; }
+  .it-dream-alpha { width: min(430px, 96vw); top: 50%; }
+  .it-dream-lead {
+    left: 50%;
+    top: 8.5%;
+    transform: translateX(-50%);
+    max-width: 92%;
+    width: max-content;
+    text-align: center;
+  }
+  .it-dream-lead .it-eyebrow { margin-bottom: 0.6rem; }
+  .it-dream-lead-title { font-size: clamp(1.5rem, 6.4vw, 2.1rem); }
+  .it-dream-lead-title em { display: inline; } /* one line each — fits the band */
+  .it-dream-card {
+    width: min(330px, 86vw);
+    left: 50%;
+    right: auto;
+    margin-left: max(-165px, -43vw);
+    padding: 1.05rem 1.15rem;
+  }
+  .it-dream-card[data-side="w"] { top: 30%; right: auto; left: 50%; text-align: left; }
+  .it-dream-card[data-side="w"] .it-dream-card-ic { margin-left: 0; }
+  .it-dream-card[data-side="c"] { top: 70%; left: 50%; } /* mirrors wonder's gap to the tofu */
+  .it-dream-card-ic { width: 30px; height: 30px; margin-bottom: 0.45rem; }
+  .it-dream-word { font-size: clamp(1.5rem, 6vw, 1.9rem); margin-bottom: 0.3rem; }
+  /* the x floats beside the dreaming tofu, between the two words */
+  .it-dream-x-glyph { left: 15%; top: 53%; }
+  .it-dream-punch { bottom: 10%; font-size: clamp(1.7rem, 7.2vw, 2.4rem); }
+  .it-dream-bloom { width: 88%; bottom: 14%; }
+}
+
+@keyframes it-border-drift { from { background-position:50% 0%; } to { background-position:50% 100%; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .it-dream-still img, .it-spr-l, .it-spr-r, .it-spr-seed, .it-prs-screw, .it-dream-flow,
+  .it-dream-card, .it-dream-card-trail, .it-db, .it-dep-caret, .it-studio-mascot .it-mascot-media,
+  .it-dream-card::after, .it-dream-card.it-glass::before { animation: none; }
+}
+
+/* service tile pills: the tile's word in Fraunces italic instead of "01 / Build" (Oct 2026) */
+.it-tile-index {
+  font-family: var(--it-font-accent);
+  font-style: italic;
+  font-size: 0.98rem;
+  letter-spacing: 0;
+  text-transform: lowercase;
+}
+
+/* ================= STUDIO + CTA: phone pass (Oct 22 2026) ================= */
+@media (max-width: 899px) {
+  /* studio → CTA had ~285px of dead air stacked from two section pads */
+  .it-studio { padding-bottom: calc(var(--it-section-pad) * 0.6); }
+  .it-cta {
+    padding-top: calc(var(--it-section-pad) * 0.7);
+    padding-bottom: calc(var(--it-section-pad) * 0.8);
+    /* clip sideways only: overflow:hidden sliced the aura's 72px blur into
+       a hard horizontal line at the section top once the padding tightened */
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  /* terminal stops covering the tofu: it tucks under its base instead */
+  .it-studio-mascot { display: flex; flex-direction: column; align-items: center; }
+  .it-deploy {
+    position: relative;
+    left: auto; bottom: auto;
+    width: min(290px, 88%);
+    margin-top: -2.4rem;
+  }
+}
+
+@media (max-width: 599px) {
+  /* chips pair up instead of stacking one per row */
+  .it-chips { gap: 0.45rem; margin-top: 1.6rem; }
+  .it-chips li { font-size: 0.62rem; letter-spacing: 0.08em; padding: 0.5em 0.85em; }
+
+  /* "you're imagining." stays on one line (was orphaning "you're") */
+  .it-cta-title { font-size: clamp(2rem, 11vw, 3.4rem); }
+
+  /* micro line wraps evenly instead of leaving "conversation" alone */
+  .it-cta-micro { letter-spacing: 0.12em; text-wrap: balance; }
+}
