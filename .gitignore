@@ -19,3 +19,7 @@ public/dream/glass/mobile/*.mp4
 public/dream/glass/mobile/*.webm
 public/dream/glass/seq/
 public/work/*/motion-*.mp4
+
+# Cloudflare Workers
+.wrangler
+.dev.vars*
