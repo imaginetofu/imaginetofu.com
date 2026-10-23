@@ -1,5 +1,4 @@
-# Keep the workers.dev prototype out of search; custom domains are unaffected.
-https://*.workers.dev/*
+/*
   X-Robots-Tag: noindex
 
 /*
