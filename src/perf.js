@@ -36,6 +36,29 @@ const SECTIONS = [
   ["footer", ".it-footer"],
 ];
 
+// Desktop: the effects are tuned for a decent GPU. If this machine can't hold the frame rate (an integrated
+// GPU on a high-res screen, say), switch the costliest layers to their cheap versions for the rest of the visit:
+// html.is-strained (CSS) + isStrained() (scripts). Machines that keep up never notice. Phones already run LITE.
+let strained = false;
+export const isStrained = () => strained;
+export function initFrameWatch() {
+  if (LITE || !("requestAnimationFrame" in window)) return;
+  let last = 0, buf = [], bad = 0;
+  const tick = (t) => {
+    const d = last ? t - last : 0; last = t;
+    if (d > 0 && d < 250 && !document.hidden) buf.push(d);    // skip tab switches / long pauses
+    if (buf.length >= 90) {                                     // ~1.5s at 60Hz
+      const s = buf.sort((a, b) => a - b), med = s[s.length >> 1], p90 = s[Math.floor(s.length * 0.9)];
+      buf = [];
+      bad = med > 20 || p90 > 34 ? bad + 1 : Math.max(0, bad - 1);   // under ~50fps, or frequent long frames
+      if (bad >= 2) { strained = true; document.documentElement.classList.add("is-strained"); return; }
+    }
+    requestAnimationFrame(tick);
+  };
+  // start once the preloader and the hero intro (both heavy by design) are done
+  setTimeout(() => requestAnimationFrame(tick), 7000);
+}
+
 const on = Object.create(null); // name → currently near the viewport
 export const isOn = (name) => on[name] !== false;
 

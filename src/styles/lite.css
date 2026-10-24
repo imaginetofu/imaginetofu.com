@@ -101,3 +101,11 @@ html.is-gecko .it-dream-card-trail { animation: none !important; }
 html.is-gecko .it-dream-card,
 html.is-gecko .it-dream-x-glyph,
 html.is-gecko .it-dg-copy { will-change: transform, opacity; }
+
+/* ---------- strained desktops (html.is-strained, perf.js initFrameWatch) ----------
+   Only when this machine measurably can't keep the frame rate: the same swaps phones get. */
+html.is-strained .it-grain { display: none; }
+html.is-strained .it-nav.is-scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--it-ground) 94%, transparent); }
+html.is-strained .it-glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--it-ground) 72%, transparent); }
+html.is-strained.js:not(.reduced) .it-dream-card.it-glass { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--it-ground) 66%, transparent); }
+html.is-strained .it-tile-aura { filter: none; -webkit-mask-image: radial-gradient(closest-side, #000 28%, transparent 100%); mask-image: radial-gradient(closest-side, #000 28%, transparent 100%); }

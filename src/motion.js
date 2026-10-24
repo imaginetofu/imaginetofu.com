@@ -5,7 +5,7 @@
 
 import { CustomEase } from "gsap/CustomEase";
 import { media, MEDIA_BASE } from "./media.js";
-import { isOn, LITE, GECKO } from "./perf.js";
+import { isOn, LITE, GECKO, isStrained } from "./perf.js";
 
 // the hero cube is position:fixed and rides on into Hello, so its idle loops stay alive for both
 const cubeOn = () => isOn("hero") || isOn("intro");
@@ -525,7 +525,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     const measure = () => {
       W = hero.clientWidth;
       H = hero.clientHeight;
-      dpr = Math.min(LITE ? 1.25 : 2, window.devicePixelRatio || 1);   // phones: soft additive glow, a screen-blended canvas the size of the hero
+      dpr = Math.min(LITE ? 1.25 : 1.5, window.devicePixelRatio || 1);   // phones: soft additive glow, a screen-blended canvas the size of the hero
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -625,7 +625,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     const tick = (now) => {
       // Firefox phones: every canvas update is a texture upload + a redraw of the blended layer, so the motes
       // draw every other frame there (their motion is slow; dt covers both frames)
-      if (GECKO && (skip++ & 1)) { rafId = requestAnimationFrame(tick); return; }
+      if ((GECKO || isStrained()) && (skip++ & 1)) { rafId = requestAnimationFrame(tick); return; }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       ctx.clearRect(0, 0, W, H);

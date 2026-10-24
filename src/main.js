@@ -20,7 +20,7 @@ import { initTileArt } from "./tile-art.js";
 import { initWorkCards } from "./work-cards.js";
 import { initGooeyCards } from "./gooey-cards.js";
 import { initPageTransition } from "./page-transition.js";
-import { TOUCH, initPerf } from "./perf.js";
+import { TOUCH, initPerf, initFrameWatch } from "./perf.js";
 
 gsap.registerPlugin(ScrollTrigger);
 // phones: the URL bar sliding away fires a resize every few frames; without this ScrollTrigger
@@ -175,6 +175,7 @@ initTileArt({ reduced }); // service windows: ascii/pixel canvas (static frame w
 
 if (!reduced) {
   initPerf({ gsap });
+  initFrameWatch();
   initMotion({ gsap, ScrollTrigger, lenis });
   initDreamGlass({ gsap, ScrollTrigger });
 } else {

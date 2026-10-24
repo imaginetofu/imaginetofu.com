@@ -5,7 +5,7 @@
    path keeps the .it-dream-duo fallback in index.html. */
 
 import { media } from "./media.js";
-import { LITE } from "./perf.js";
+import { LITE, isStrained } from "./perf.js";
 
 const q = (s, c = document) => c.querySelector(s);
 
@@ -352,7 +352,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       return;
     }
     ringOff = false;
-    const d = Math.min(devicePixelRatio || 1, LITE ? 1.25 : 2), px = Math.round(boxes().tofu * 2.2 * d);
+    const d = Math.min(devicePixelRatio || 1, LITE || isStrained() ? 1.25 : 1.5), px = Math.round(boxes().tofu * 2.2 * d);
     if (px !== ringPx) { ringPx = px; ring.back.width = ring.back.height = ring.front.width = ring.front.height = px; }
     const S = ringPx, U = S / 2.2;
     const ox = S / 2 + (RG.cx - 0.5) * U, oy = S / 2 + (RG.cy - 0.5) * U, rx = RG.rx * U, ry = RG.ry * U;
@@ -435,7 +435,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       return;
     }
     resoOff = false;
-    const rk = LITE ? 0.5 : 1;   // soft glow only: 1x on desktop, half-res on phones (a quarter of the pixels to clear, fill and blend)
+    const rk = LITE || isStrained() ? 0.5 : 1;   // soft glow only: 1x on desktop, half-res on phones (a quarter of the pixels to clear, fill and blend)
     if (reso.width !== Math.round(W * rk) || reso.height !== Math.round(H * rk)) {
       reso.width = Math.round(W * rk); reso.height = Math.round(H * rk); reso.style.width = W + "px"; reso.style.height = H + "px";
       resoCtx.setTransform(rk, 0, 0, rk, 0, 0);   // everything below stays in stage px
@@ -465,7 +465,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   // get a twinkling 4-point glint. ~100k pixels a frame on desktop: a couple of ms.
   let petalFrame = 0, petalCands = [];
   function petalFlare(g, t, hx, hy, h, k) {
-    const v = vids.s3; if (mobile || !v || v.readyState < 2 || RESO.petalStrength <= 0) return;   // phones: the video carries the glow
+    const v = vids.s3; if (mobile || isStrained() || !v || v.readyState < 2 || RESO.petalStrength <= 0) return;   // (strained desktops: the readback stalls the GPU)   // phones: the video carries the glow
     // sample the video every third frame (GPU readback + pixel pass); in between, redraw the cached flare
     const fresh = (petalFrame++ % 3) === 0;
     const N = RESO.sample, w4 = Math.max(16, Math.round(W / N)), h4 = Math.max(16, Math.round(H / N));
@@ -759,7 +759,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     // phones: the three canvases (ring, resonance light, stardust) redraw every other frame (half the display rate; on a
     // 60Hz screen, 60fps on 120Hz). They are soft glows; the creature + scene transforms above stay full rate.
     heavyDt += dt; heavyN++;
-    const heavy = !LITE || (heavyN & 1) === 0;
+    const heavy = !(LITE || isStrained()) || (heavyN & 1) === 0;
     if (heavy) { drawRing(progress, (now - t0) / 1000); drawReso((now - t0) / 1000); }
     let dx = 0, dy = 0; if (prevPos) { dx = (pos.cx - prevPos.cx) / dt; dy = (pos.cy - prevPos.cy) / dt; } prevPos = pos;
     const speed = Math.hypot(dx, dy), k = Math.min(speed / 1400, 1), amt = 7.5 * k, ux = speed > 1 ? dx / speed : 1, uy = speed > 1 ? dy / speed : 0;
