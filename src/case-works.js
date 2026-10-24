@@ -143,23 +143,83 @@ export function initCaseWorks({ gsap, ScrollTrigger, reduced }) {
   const ink = getComputedStyle(document.body).getPropertyValue("--it-ground").trim() || "#1a1a1a";
   const frames = [...works.querySelectorAll(".it-cs-work")];
 
-  // motion clips: the poster <img> is revealed, then the <video> takes over
-  // and plays only while it is on screen
+  // motion clips: the poster <img> is revealed, then the <video> takes over and plays only while it is
+  // on screen. Slow-connection care (Oct 24):
+  //  - phones and slow / Save-Data connections get the small -s clip (640w, 24fps; phone loops 360w)
+  //  - Save-Data or 2g/3g: nothing downloads until the visitor taps "Play clip"
+  //  - phones: a clip starts only after it has stayed on screen ~0.9s, and at most 2 play at once
+  //  - downloads are queued one after another so clips never fight each other for bandwidth
+  //  - a clip that stalls 4s, or fails, hands back to its poster with a "Play clip" button
+  const net = navigator.connection || {};
+  const SLOW = !!net.saveData || /^(slow-2g|2g|3g)$/.test(net.effectiveType || "") || (net.downlink > 0 && net.downlink < 1.5);
+  const SMALL = LITE || SLOW;
+  const small = (p) => p.replace(/\.mp4$/, "-s.mp4");
+  const live = new Set();
+  const dwell = new WeakMap();
+  let queue = Promise.resolve();
+
+  const hostOf = (v) => v.closest(".it-cs-clip");
+  const offer = (host, v) => {
+    host.classList.remove("is-playing");
+    host.classList.add("is-offer");
+    if (host.querySelector(".it-cs-play")) return;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "it-cs-play"; b.textContent = "Play clip";
+    b.addEventListener("click", () => {
+      host.classList.remove("is-offer"); host.dataset.user = "1";
+      v.dataset.fail = ""; begin(host, v);
+    });
+    host.appendChild(b);
+  };
+  const attach = (host, v) => {
+    if (v.dataset.on) return;
+    v.dataset.on = "1";
+    let useSmall = SMALL, stall;
+    const load = () => { v.src = media(useSmall ? small(v.dataset.clip) : v.dataset.clip); };
+    const clear = () => { clearTimeout(stall); host.classList.remove("is-stalled"); };
+    v.addEventListener("playing", () => { clear(); host.classList.add("is-playing"); });
+    v.addEventListener("canplay", clear);
+    const trouble = () => { clearTimeout(stall); stall = setTimeout(() => {
+      if (v.paused || v.readyState >= 3) return;
+      v.pause(); live.delete(v); offer(host, v);
+    }, 4000); };
+    v.addEventListener("waiting", trouble);
+    v.addEventListener("stalled", trouble);
+    v.addEventListener("error", () => {
+      if (useSmall && !SLOW) { useSmall = false; load(); v.play().catch(() => {}); return; } // no small clip: use the full one
+      v.dataset.on = ""; offer(host, v);
+    });
+    // staggered: the next clip waits for this one to have data (or 2.5s)
+    queue = queue.then(() => new Promise((res) => {
+      const done = () => { v.removeEventListener("loadeddata", done); res(); };
+      v.addEventListener("loadeddata", done); setTimeout(done, 2500);
+      load();
+    }));
+  };
+  const begin = (host, v) => {
+    attach(host, v);
+    while (live.size >= 2) { const o = live.values().next().value; o.pause(); live.delete(o); }
+    live.add(v);
+    v.play().catch(() => {});
+  };
   const clipIO = "IntersectionObserver" in window ? new IntersectionObserver((entries) => {
     for (const e of entries) {
-      const v = e.target.querySelector("video");
-      if (!v || !v.src) continue;
-      if (e.isIntersecting) v.play().catch(() => {}); else v.pause();
+      const host = e.target, v = host.querySelector("video");
+      if (!v) continue;
+      const auto = !SLOW || host.dataset.user === "1";
+      clearTimeout(dwell.get(host));
+      if (e.isIntersecting) {
+        if (!auto) { if (!v.dataset.on) offer(host, v); continue; }
+        if (host.classList.contains("is-offer")) continue; // failed or stalled: wait for the tap
+        dwell.set(host, setTimeout(() => begin(host, v), LITE ? 900 : 0));
+      } else { v.pause(); live.delete(v); }
     }
   }, { threshold: 0.15 }) : null;
   const startClip = (host) => {
     const v = host.querySelector("video[data-clip]");
     if (!v) return;
-    v.src = media(v.dataset.clip);
-    v.addEventListener("playing", () => host.classList.add("is-playing"), { once: true });
-    if (reduced || !clipIO) { v.controls = true; host.classList.add("is-playing"); return; }
+    if (reduced || !clipIO) { v.controls = true; host.classList.add("is-playing"); v.dataset.on = "1"; v.src = media(SMALL ? small(v.dataset.clip) : v.dataset.clip); return; }
     clipIO.observe(host);
-    v.play().catch(() => {});
   };
 
   frames.forEach((fig) => {

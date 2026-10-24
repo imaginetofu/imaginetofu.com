@@ -364,6 +364,10 @@ html.reduced .it-cs-aura { animation: none; }
 .it-cs-clip .it-cs-clip-tag { position: absolute; left: 0.7rem; top: 0.7rem; z-index: 2; padding: 0.25rem 0.55rem; border-radius: 999px; background: color-mix(in srgb, var(--it-ground) 78%, transparent); color: var(--it-cream); font-family: var(--it-font-mono); font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; pointer-events: none; opacity: 0; transition: opacity 0.4s; }
 .it-cs-clip.is-playing .it-cs-clip-tag { opacity: 1; }
 .it-cs-clip .it-cs-clip-tag::before { content: ""; display: inline-block; width: 6px; height: 6px; margin-right: 0.45em; border-radius: 50%; background: var(--it-peach); vertical-align: 1px; }
+/* tap-to-play: shown on Save-Data / slow connections, and when a clip stalls or fails */
+.it-cs-clip .it-cs-play { display: none; position: absolute; left: 50%; bottom: 1rem; z-index: 3; transform: translateX(-50%); padding: 0.6rem 1.15rem 0.6rem 1rem; border: 1px solid color-mix(in srgb, var(--it-cream) 35%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--it-ground) 82%, transparent); color: var(--it-cream); font-family: var(--it-font-mono); font-size: 0.66rem; letter-spacing: 0.16em; text-transform: uppercase; cursor: pointer; }
+.it-cs-clip .it-cs-play::before { content: ""; display: inline-block; margin-right: 0.6em; border-left: 0.5em solid var(--it-peach); border-top: 0.32em solid transparent; border-bottom: 0.32em solid transparent; vertical-align: 0; }
+.it-cs-clip.is-offer:not(.is-playing) .it-cs-play { display: block; }
 
 /* full page, auto scrolling, in a browser frame */
 .it-cs-browser {
