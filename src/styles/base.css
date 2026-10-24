@@ -43,6 +43,8 @@ body {
 img, svg, video { display: block; max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 ul, ol { list-style: none; }
+/* no grey/blue flash box on tap (Chrome Android); keyboard focus keeps its :focus-visible rings */
+html { -webkit-tap-highlight-color: transparent; }
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
 em { font-style: italic; }
 

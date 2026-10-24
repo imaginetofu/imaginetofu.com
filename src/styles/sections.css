@@ -148,10 +148,11 @@
   width: min(46vw, 580px);
   z-index: 2;
   mix-blend-mode: screen;
-  /* clickable: poke the tofu to make it jiggle (JS). the ::before glow
-     keeps pointer-events: none so only the tofu itself is the hit target */
+  /* pokeable: click the tofu to make it jiggle (JS), a quiet easter egg, so no
+     pointer cursor. the ::before glow keeps pointer-events: none so only the tofu is the hit target */
   pointer-events: auto;
-  cursor: pointer;
+  cursor: inherit;
+  -webkit-tap-highlight-color: transparent;
   will-change: transform;
 }
 /* desktop motion mode: promoted to fixed for the scroll journey —
@@ -1017,7 +1018,7 @@ html.reduced .it-tile-video, html:not(.js) .it-tile-video { display: none; }
   color: var(--it-cream-80);
   max-width: 30ch;
 }
-/* Velorah liquid-glass pill */
+/* Velorah liquid-glass pill, mint-lit at rest so the one live link among the three reads as clickable */
 .it-tile-pill {
   display: inline-flex;
   align-items: center;
@@ -1029,21 +1030,24 @@ html.reduced .it-tile-video, html:not(.js) .it-tile-video { display: none; }
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--it-cream);
-  background: color-mix(in srgb, var(--it-cream) 4%, transparent);
+  color: var(--it-mint);
+  background: color-mix(in srgb, var(--it-mint) 10%, transparent);
   box-shadow:
-    inset 0 1px 1px color-mix(in srgb, var(--it-cream) 22%, transparent),
-    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 16%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--it-cream) 10%, transparent);
-  transition: background-color 0.4s, box-shadow 0.4s, gap 0.4s;
+    inset 0 1px 1px color-mix(in srgb, var(--it-cream) 24%, transparent),
+    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 24%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--it-mint) 34%, transparent),
+    0 0 18px -4px color-mix(in srgb, var(--it-mint) 30%, transparent);
+  transition: background-color 0.4s, box-shadow 0.4s, gap 0.4s, color 0.4s;
 }
 .it-tile:hover .it-tile-pill {
   gap: 0.7em;
-  background: color-mix(in srgb, var(--it-mint) 14%, transparent);
+  color: var(--it-cream);
+  background: color-mix(in srgb, var(--it-mint) 22%, transparent);
   box-shadow:
     inset 0 1px 1px color-mix(in srgb, var(--it-cream) 30%, transparent),
-    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 30%, transparent),
-    0 0 0 1px color-mix(in srgb, var(--it-mint) 30%, transparent);
+    inset 0 -1px 1px color-mix(in srgb, var(--it-mint) 34%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--it-mint) 55%, transparent),
+    0 0 24px -4px color-mix(in srgb, var(--it-mint) 45%, transparent);
 }
 
 /* the little one keeps watch over the field (care tile) */
