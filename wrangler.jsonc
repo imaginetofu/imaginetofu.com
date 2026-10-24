@@ -5,5 +5,13 @@
   "assets": {
     "directory": "./dist",
     "html_handling": "auto-trailing-slash"
-  }
+  },
+  // imaginetofu.com went live on this Worker on 2026-10-24 (DNS moved from the old host to Cloudflare).
+  // Declared here so a deploy from GitHub never drops them.
+  "routes": [
+    { "pattern": "imaginetofu.com", "custom_domain": true },
+    { "pattern": "www.imaginetofu.com", "custom_domain": true }
+  ],
+  // the *.workers.dev address served an indexable copy of the site; the real domain is the only address now
+  "workers_dev": false
 }
