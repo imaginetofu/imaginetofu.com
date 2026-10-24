@@ -6,6 +6,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/sections.css";
 import "./styles/dream-glass.css";
+import "./styles/lite.css";
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -19,8 +20,12 @@ import { initTileArt } from "./tile-art.js";
 import { initWorkCards } from "./work-cards.js";
 import { initGooeyCards } from "./gooey-cards.js";
 import { initPageTransition } from "./page-transition.js";
+import { TOUCH, initPerf } from "./perf.js";
 
 gsap.registerPlugin(ScrollTrigger);
+// phones: the URL bar sliding away fires a resize every few frames; without this ScrollTrigger
+// re-measures every trigger and pin each time, which is the classic mid-scroll hitch on Android
+ScrollTrigger.config({ ignoreMobileResize: true });
 window.gsap = gsap; // console/debug handle (harmless in prod)
 
 const doc = document.documentElement;
@@ -35,7 +40,20 @@ reducedQuery.addEventListener("change", (e) => {
 /* ---------- smooth scroll ---------- */
 
 let lenis = null;
-if (!reduced) {
+if (!reduced && TOUCH) {
+  // touch screens keep the browser's own compositor-driven scroll (Lenis would only add main-thread
+  // work there); this stand-in keeps the stop/start/scrollTo calls the rest of the page makes
+  history.scrollRestoration = "manual";
+  scrollTo(0, 0);
+  lenis = {
+    stop() { doc.style.overflow = "hidden"; },
+    start() { doc.style.overflow = ""; },
+    scrollTo(target, { offset = 0 } = {}) {
+      const y = typeof target === "number" ? target : target.getBoundingClientRect().top + scrollY + offset;
+      scrollTo({ top: y, behavior: "smooth" });
+    },
+  };
+} else if (!reduced) {
   // the preloader owns the first paint — always start at the top so
   // browser scroll-restoration can't desync Lenis while it's stopped
   history.scrollRestoration = "manual";
@@ -156,6 +174,7 @@ initPageTransition({ gsap, reduced }); // pixel cells between pages
 initTileArt({ reduced }); // service windows: ascii/pixel canvas (static frame when reduced)
 
 if (!reduced) {
+  initPerf({ gsap });
   initMotion({ gsap, ScrollTrigger, lenis });
   initDreamGlass({ gsap, ScrollTrigger });
 } else {

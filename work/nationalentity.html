@@ -105,9 +105,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
@@ -190,24 +192,27 @@
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">Where it started</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--trio" aria-hidden="true"><i class="o"></i><i class="r"></i><i class="f"><b></b><b></b><b></b></i></div>
               <h3 class="it-cs-pillar-title">A logo, a photo, a form.</h3>
-              <p class="it-cs-pillar-body">We met through the rave community, where Adam’s crew got its start before growing into full-scale concert production. Their old site never said what they do.</p>
+              <p class="it-cs-pillar-body">Met through the rave scene. The old site never said what they do.</p>
             </div>
           </article>
-          <article class="it-cs-pillar" style="--i:1">
+          <article class="it-cs-pillar is-poster" style="--i:1">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What was in the way</p>
               <h3 class="it-cs-pillar-title">One picture can’t hold the scale.</h3>
-              <p class="it-cs-pillar-body">Fire, CO2 jets, lasers, LED walls, sound, inflatables. Visitors had to guess at all of it from a single concert photo.</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--tags" aria-hidden="true"><span>Fire</span><span>CO2 jets</span><span>Lasers</span><span>LED walls</span><span>Sound</span><span>Inflatables</span></div>
+              <p class="it-cs-pillar-body">Visitors had to guess it all from one concert photo.</p>
             </div>
           </article>
           <article class="it-cs-pillar" style="--i:2">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What we pressed</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--clip" data-src="/work/nationalentity/tile"><video muted loop playsinline preload="none" aria-label="National Entity stage lights over the crowd, looping"></video></div>
               <h3 class="it-cs-pillar-title">A site that puts you in the crowd.</h3>
-              <p class="it-cs-pillar-body">An intro that fires off their effects, a sideways run through the rig, headliners set like a rave poster, and an encore where the stage powers down for the next show.</p>
+              <p class="it-cs-pillar-body">Effects on load, a sideways rig and a rave-poster lineup.</p>
             </div>
           </article>
         </div>
@@ -222,50 +227,49 @@
       <div class="it-cs-gallery-head it-cs-head" data-cs-reveal>
         <p class="it-eyebrow">The work</p>
         <h2 class="it-h2">The whole site, <em>in motion.</em></h2>
-        <p class="it-cs-note">Recorded on the live site. The first frame scrolls the homepage on its own; the rest play as you reach them.</p>
+        <p class="it-cs-note">Recorded on the live site. Each clip plays as you reach it.</p>
       </div>
       <div class="it-cs-works">
-        <figure class="it-cs-work it-cs-work--auto" style="--c:1;--s:8">
+        <figure class="it-cs-work it-cs-work--hero" style="--c:1;--s:8">
           <div class="it-cs-browser">
             <div class="it-cs-browser-bar" aria-hidden="true"><span class="it-cs-browser-dots"><i></i><i></i><i></i></span><span class="it-cs-browser-url it-cs-mono">nationalentity.com</span></div>
-            <div class="it-cs-auto">
-              <div class="it-cs-px it-cs-auto-view"><img src="/work/nationalentity/full-desktop.webp" alt="The full National Entity homepage, scrolling top to bottom" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-              <span class="it-cs-auto-bar" aria-hidden="true"><i></i></span>
-            </div>
+            <div class="it-cs-px it-cs-clip" style="aspect-ratio:16/10;border-radius:0"><img src="/work/nationalentity/motion-hero.webp" alt="National Entity: the homepage hero in motion" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-hero.mp4" aria-label="National Entity: the homepage hero, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           </div>
-          <figcaption class="it-cs-mono"><span>Full homepage · scrolls on its own</span></figcaption>
+          <figcaption class="it-cs-mono"><span>Hero · the lights</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--phone" style="--c:10;--s:3;--o:clamp(2rem,9vw,9rem)">
-          <div class="it-cs-phone"><div class="it-cs-px"><img src="/work/nationalentity/hero-mobile.webp" alt="National Entity on a phone" width="780" height="1688" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div></div>
+          <div class="it-cs-phone"><div class="it-cs-px it-cs-clip"><img src="/work/nationalentity/motion-mobile.webp" alt="National Entity on a phone" width="780" height="1688" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-mobile.mp4" aria-label="National Entity on a phone, screen recording"></video><i class="it-cs-pending" aria-hidden="true">clip pending</i></div></div>
           <figcaption class="it-cs-mono"><span>On a phone</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
-          <div class="it-cs-px it-cs-clip"><img src="/work/nationalentity/motion-hero.webp" alt="National Entity: hero · the lights" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-hero.mp4" aria-label="National Entity: hero · the lights, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Hero · the lights</span></figcaption>
-        </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/nationalentity/motion-services.webp" alt="National Entity: every cue, one crew · scrolls sideways" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-services.mp4" aria-label="National Entity: every cue, one crew · scrolls sideways, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Every cue, one crew · scrolls sideways</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:5;--o:clamp(3rem,10vw,10rem)">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/nationalentity/motion-headliners.webp" alt="National Entity: headliners · hover" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-headliners.mp4" aria-label="National Entity: headliners · hover, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Headliners · hover</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:6;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:3;--s:8">
           <div class="it-cs-px it-cs-clip"><img src="/work/nationalentity/motion-encore.webp" alt="National Entity: the encore" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/nationalentity/motion-encore.mp4" aria-label="National Entity: the encore, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>The encore</span></figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- =============== NEXT / CTA =============== -->
+    <!-- =============== CTA + NEXT =============== -->
     <section class="it-cs-section it-cs-next">
-      <div class="it-cs-next-row" data-cs-reveal>
+      <div class="it-cs-cta" data-cs-reveal>
+        <p class="it-eyebrow">Your turn</p>
+        <h2 class="it-h2 it-cs-cta-title">Want one that <em>moves like this?</em></h2>
+        <p class="it-cs-cta-line">Design, motion and build, from the first call to launch.</p>
+        <a class="it-btn it-btn-mint it-btn-big it-cs-cta-btn" href="/book/">Book a call</a>
+      </div>
+      <div class="it-cs-next-row">
         <a class="it-cs-next-link" href="/work/tramokyo.html">
           <span class="it-eyebrow">Next up</span>
           <span class="it-cs-next-title">Tramokyo →</span>
         </a>
-        <a class="it-btn it-btn-mint" href="/book/">Book a call</a>
+        <a class="it-cs-all it-cs-mono" href="/#work">All work</a>
       </div>
       <p class="it-cs-footnote">Imagine Tofu · San Leandro, CA → everywhere · <a href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a></p>
     </section>

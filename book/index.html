@@ -53,10 +53,12 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
   <link rel="preconnect" href="https://tidycal.com" />
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the

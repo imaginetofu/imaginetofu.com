@@ -12,6 +12,7 @@
    page frame becomes a normal scrollable box. */
 
 import { media } from "./media.js";
+import { LITE } from "./perf.js";
 
 const STEPS = [0.025, 0.05, 0.08, 0.14, 1]; // pixel scale per step (scroll-57: 2,5,6,8,100%)
 const CELL = 22;   // CSS px, size of the sweeping squares (scroll-11 grid)
@@ -107,7 +108,7 @@ function autoScroll(gsap, ScrollTrigger, frame, reduced) {
     const dist = Math.max(0, ih - vh);
     if (thumb) gsap.set(thumb, { height: Math.max(8, (vh / ih) * 100) + "%", yPercent: 0, top: 0 });
     if (!dist) return;
-    const speed = view.clientWidth * 0.11; // px per second, scales with the frame
+    const speed = view.clientWidth * 0.15; // px per second, scales with the frame (0.11 until Oct 24: a little faster)
     const prog = { p: 0 };
     const apply = () => {
       gsap.set(img, { y: -dist * prog.p });
@@ -171,11 +172,16 @@ export function initCaseWorks({ gsap, ScrollTrigger, reduced }) {
     // start loading a screen early, reveal when it is well inside the view
     ScrollTrigger.create({ trigger: host, start: "top bottom+=60%", once: true, onEnter: () => { img.loading = "eager"; } });
     ScrollTrigger.create({
-      trigger: host, start: "top 82%", once: true,
+      trigger: host, start: LITE ? "top 92%" : "top 82%", once: true,
       onEnter: async () => {
         try { await img.decode(); } catch { /* broken or pending */ }
         if (!img.naturalWidth) { host.classList.add("is-revealed"); startClip(host); return; }
-        await reveal(host, img, ink);
+        // phones: a plain fade once the image is decoded. The pixel sweep redraws a full-frame canvas
+        // (plus a downscaled copy of the capture) every frame for a second, right while the page scrolls.
+        if (LITE) {
+          host.classList.add("is-fade");
+          await new Promise((res) => requestAnimationFrame(() => { host.classList.add("is-revealed"); setTimeout(res, 600); }));
+        } else await reveal(host, img, ink);
         startClip(host);
         fig.dispatchEvent(new Event("it-revealed"));
       },

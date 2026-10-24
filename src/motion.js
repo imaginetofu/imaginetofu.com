@@ -5,6 +5,10 @@
 
 import { CustomEase } from "gsap/CustomEase";
 import { media, MEDIA_BASE } from "./media.js";
+import { isOn, LITE, GECKO } from "./perf.js";
+
+// the hero cube is position:fixed and rides on into Hello, so its idle loops stay alive for both
+const cubeOn = () => isOn("hero") || isOn("intro");
 
 const q = (s, c = document) => c.querySelector(s);
 const qa = (s, c = document) => [...c.querySelectorAll(s)];
@@ -521,7 +525,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     const measure = () => {
       W = hero.clientWidth;
       H = hero.clientHeight;
-      dpr = Math.min(2, window.devicePixelRatio || 1);
+      dpr = Math.min(LITE ? 1.25 : 2, window.devicePixelRatio || 1);   // phones: soft additive glow, a screen-blended canvas the size of the hero
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -617,7 +621,11 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       }
     };
 
+    let skip = 0;
     const tick = (now) => {
+      // Firefox phones: every canvas update is a texture upload + a redraw of the blended layer, so the motes
+      // draw every other frame there (their motion is slow; dt covers both frames)
+      if (GECKO && (skip++ & 1)) { rafId = requestAnimationFrame(tick); return; }
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       ctx.clearRect(0, 0, W, H);
@@ -648,6 +656,15 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       ([e]) => (e.isIntersecting && e.intersectionRatio > 0.12 ? !document.hidden && start() : stop()),
       { threshold: [0, 0.12] }
     ).observe(hero);
+    if (LITE) {
+      let atTop = true; // motes freeze as soon as the page starts moving (canvas keeps its last frame)
+      addEventListener("scroll", () => {
+        const now = scrollY < innerHeight * 0.05;
+        if (now === atTop) return;
+        atTop = now;
+        if (now) { if (!document.hidden) start(); } else stop();
+      }, { passive: true });
+    }
     document.addEventListener("visibilitychange", () =>
       document.hidden ? stop() : heroVisible() && start()
     );
@@ -678,6 +695,8 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     // webm is ~1.9MB; reduced-motion users never reach this module at all.
     const tryAttach = async () => {
       // CDN copy: no HEAD probe (cross-origin, and the file is known to exist); pick by codec support
+      // phones: a 1280x720 re-encode (same frames, about half the bytes, a quarter of the pixels to decode); it ships with the site, not the CDN
+      if (LITE) return video.canPlayType('video/webm; codecs="vp9"') ? "/dream/hero-m.webm" : "/dream/hero-m.mp4";
       if (MEDIA_BASE) return media(video.canPlayType('video/webm; codecs="vp9"') ? "/dream/hero.webm" : "/dream/hero.mp4");
       for (const src of ["/dream/hero.webm", "/dream/hero.mp4"]) {
         try {
@@ -723,6 +742,17 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
               ([e]) => (e.isIntersecting && !document.hidden ? video.play().catch(() => {}) : video.pause()),
               { threshold: 0 }
             ).observe(hero);
+          }
+          if (LITE) {
+            // the cube leaves across the vortex as soon as the page moves: freeze the video's decode +
+            // its screen-blend recomposite for that stretch (the last frame stays up)
+            let atTop = true;
+            addEventListener("scroll", () => {
+              const now = scrollY < innerHeight * 0.05;
+              if (now === atTop) return;
+              atTop = now;
+              if (now) video.play().catch(() => {}); else video.pause();
+            }, { passive: true });
           }
           document.addEventListener("visibilitychange", () => {
             if (document.hidden) return video.pause();
@@ -793,7 +823,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         // pool — alive, not mechanical
         const schedule = () => { jt = setTimeout(tick, gsap.utils.random(3200, 5800)); };
         const tick = () => {
-          if (document.hidden) return schedule();
+          if (document.hidden || !cubeOn() || (LITE && scrollY > 24)) return schedule();   // nobody can see the cube: no wobble
           jiggle(false).eventCallback("onComplete", schedule);
         };
         schedule();
@@ -855,7 +885,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         let bt;
         const scheduleBlink = () => { bt = setTimeout(blink, gsap.utils.random(4500, 8500)); };
         const blink = () => {
-          if (document.hidden || !blinkImg.isConnected || !blinkImg.naturalWidth) return scheduleBlink();
+          if (document.hidden || !cubeOn() || !blinkImg.isConnected || !blinkImg.naturalWidth) return scheduleBlink();
           const hold = Math.random() < 0.2 ? 1.3 : 0.6; // occasional deep calm
           gsap.timeline({ onComplete: scheduleBlink })
             // true crossfade: the open frame fully steps aside so its eyes
@@ -883,6 +913,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       gsap.set(rotate, { width: widths[0] });
       let i = 0;
       setInterval(() => {
+        if (document.hidden || !isOn("hero")) return;   // the width tween is a layout; skip it off-screen
         const cur = words[i];
         i = (i + 1) % words.length;
         const nxt = words[i];
@@ -913,21 +944,25 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
   /* ---------------- hero scroll-out ---------------- */
 
   // cosmos drifts with the scroll (constant overscale hides the travel)
-  gsap.fromTo(
-    ".it-hero-cosmos img",
-    { yPercent: -5, scale: 1.12 },
-    {
-      yPercent: 5,
-      scale: 1.12,
+  // (phones skip both parallaxes: they re-scale a 1000px+ image and re-position the text on every scroll
+  // frame, right while the cube is travelling across the same screen)
+  if (!LITE) {
+    gsap.fromTo(
+      ".it-hero-cosmos img",
+      { yPercent: -5, scale: 1.12 },
+      {
+        yPercent: 5,
+        scale: 1.12,
+        ease: "none",
+        scrollTrigger: { trigger: ".it-hero", start: "top top", end: "bottom top", scrub: true },
+      }
+    );
+    gsap.to(".it-hero-text", {
+      yPercent: -7,
       ease: "none",
       scrollTrigger: { trigger: ".it-hero", start: "top top", end: "bottom top", scrub: true },
-    }
-  );
-  gsap.to(".it-hero-text", {
-    yPercent: -7,
-    ease: "none",
-    scrollTrigger: { trigger: ".it-hero", start: "top top", end: "bottom top", scrub: true },
-  });
+    });
+  }
   ScrollTrigger.create({
     start: 80,
     onEnter: () => gsap.to(".it-scroll-cue", { autoAlpha: 0, duration: 0.4, overwrite: "auto" }),
@@ -940,7 +975,18 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
   const statement = q(".it-statement");
   if (statement) {
     splitWords(statement, wrapScrub);
-    gsap.to(qa(".it-sw", statement), {
+    // phones: the words fade in on a short timed stagger when the paragraph arrives, instead of
+    // being tied to the scroll position (a per-word opacity write on every scroll frame)
+    if (GECKO) {
+      // Firefox phones: same staggered fade, as CSS transitions (compositor-run, no tile redraw)
+      qa(".it-sw", statement).forEach((w, i) => { w.style.transitionDelay = (i * 0.045).toFixed(3) + "s"; });
+      statement.classList.add("gk-stmt");
+      ScrollTrigger.create({ trigger: statement, start: "top 82%", once: true, onEnter: () => statement.classList.add("is-in") });
+    } else
+    gsap.to(qa(".it-sw", statement), LITE ? {
+      opacity: 1, ease: "power1.out", duration: 0.4, stagger: 0.045,
+      scrollTrigger: { trigger: statement, start: "top 82%", once: true },
+    } : {
       opacity: 1,
       ease: "none",
       stagger: 1,
@@ -963,7 +1009,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     gsap.set(beans, { scale: 0 });
     gsap
       .timeline({
-        scrollTrigger: { trigger: ".it-intro", start: "top 70%", end: "center 40%", scrub: 1 },
+        scrollTrigger: LITE ? { trigger: ".it-intro", start: "top 70%", once: true } : { trigger: ".it-intro", start: "top 70%", end: "center 40%", scrub: 1 },
       })
       .to(stem, { strokeDashoffset: 0, duration: 1, ease: "none" })
       .to(leaf, { strokeDashoffset: 0, duration: 0.6, ease: "none" }, "-=0.35")
@@ -987,7 +1033,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     gsap.set(dLabels, { autoAlpha: 0 });
     gsap
       .timeline({
-        scrollTrigger: { trigger: ".it-intro", start: "top 52%", end: "center 26%", scrub: 1 },
+        scrollTrigger: LITE ? { trigger: ".it-intro", start: "top 52%", once: true } : { trigger: ".it-intro", start: "top 52%", end: "center 26%", scrub: 1 },
       })
       .to(dBean, { strokeDashoffset: 0, duration: 0.5, ease: "none" })
       .to(dLabels[0], { autoAlpha: 1, duration: 0.15 }, "<0.3")
@@ -1073,6 +1119,13 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     if (el === statement) return;
     splitWords(el, wrapMask);
     const inners = qa(".it-w-in", el);
+    if (GECKO) {
+      const step = inners.length > 1 ? 0.4 / (inners.length - 1) : 0;   // stagger { amount: 0.4 }, as below
+      inners.forEach((w, i) => { w.style.transitionDelay = (i * step).toFixed(3) + "s"; });
+      el.classList.add("gk-split");
+      ScrollTrigger.create({ trigger: el, start: "top 85%", once: true, onEnter: () => el.classList.add("is-in") });
+      return;
+    }
     gsap.set(inners, { yPercent: 118 });
     gsap.to(inners, {
       yPercent: 0,
@@ -1086,6 +1139,11 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
   qa("[data-reveal]").forEach((el) => {
     if (el.closest(".it-hero")) return; // hero handles its own entrance
+    if (GECKO) {
+      el.classList.add("gk-rv");
+      ScrollTrigger.create({ trigger: el, start: "top 88%", once: true, onEnter: () => el.classList.add("is-in") });
+      return;
+    }
     gsap.fromTo(
       el,
       { autoAlpha: 0, y: 34 },
@@ -1101,7 +1159,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
   // each still drifts a little as it crosses the viewport (the window is
   // a view into a place, not a sticker). CSS owns `scale`; GSAP owns
   // transform, so the two compose instead of fighting.
-  qa(".it-tile-scene img, .it-tile-scene canvas").forEach((img) => {
+  if (!GECKO) qa(".it-tile-scene img, .it-tile-scene canvas").forEach((img) => {   // (Firefox phones: no scrubbed parallax)
     const box = img.closest(".it-tile");
     gsap.fromTo(
       img,
@@ -1550,9 +1608,14 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
       // tip-sway attach, like desktop — scale from the extended media box
       const vid = q(".it-hero-video");
+      // quickSetter + a sub-pixel gate: gsap.set() builds a tween per call, and this runs
+      // every frame of the first screen (it was the single biggest main-thread cost there)
+      const phoneMQ = matchMedia("(max-width: 899px)");
+      const setSwayX = gsap.quickSetter(cube, "x", "px");
+      let lastSwayX = 1e9;
       gsap.ticker.add(() => {
         if (!vid || !vid.currentSrc || vid.paused) return;
-        if (!matchMedia("(max-width: 899px)").matches) return;
+        if (!phoneMQ.matches) return;
         if (scrollY > innerHeight * 0.9) return;
         const n = TIP_SWAY.length;
         const i = ((vid.currentTime % LOOP_DUR) / LOOP_DUR) * n;
@@ -1560,7 +1623,10 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         const b = TIP_SWAY[Math.ceil(i) % n];
         const off = a + (b - a) * (i - Math.floor(i));
         if (!mobS) return;
-        gsap.set(cube, { x: off * GLOW.vw * mobS * 1.6 });
+        const px = off * GLOW.vw * mobS * 1.6;
+        if (Math.abs(px - lastSwayX) < 0.05) return;
+        lastSwayX = px;
+        setSwayX(px);
       });
     }
 
@@ -1581,8 +1647,16 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         },
         rotation: 6,
         scale: 0.92,
-        ease: "none",
-        scrollTrigger: {
+        // phones: a timed glide that starts as soon as the page moves, not a scrub. A scrubbed transform
+        // is applied on the main thread one frame behind the compositor's scroll, which reads as judder on a
+        // big blended layer; a timed tween runs at full rate and reverses cleanly on the way back up.
+        ...(LITE ? { duration: 0.85, ease: "power2.inOut" } : { ease: "none" }),
+        scrollTrigger: LITE ? {
+          trigger: ".it-hero",
+          start: "top top-=36",
+          toggleActions: "play none none reverse",
+          invalidateOnRefresh: true,
+        } : {
           trigger: ".it-hero",
           start: "top top",
           end: "bottom 60%", // gone before Hello's pop-in trigger fires
@@ -1614,51 +1688,44 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         },
       });
 
-      // act 3 — fades as Hello scrolls past (same window as desktop)
-      gsap.to(cube, {
-        autoAlpha: 0,
-        ease: "none",
-        immediateRender: false,
-        scrollTrigger: {
-          trigger: ".it-intro",
-          start: "bottom 55%",
-          end: "bottom 20%",
-          scrub: true,
-        },
-      });
+      // act 3
+      if (GECKO) {
+        // Firefox phones: a timed fade once Hello is mostly past (a scrubbed opacity on this big blended
+        // layer is a redraw on every scroll frame there)
+        gsap.to(cube, {
+          autoAlpha: 0, immediateRender: false, duration: 0.6, ease: "power1.inOut",
+          scrollTrigger: { trigger: ".it-intro", start: "bottom 40%", toggleActions: "play none none reverse" },
+        });
+      } else {
+        // act 3 (Dennis, Oct 24): the gap between Hello and the work cards. The tofu hops softly left and
+        // right across it, a small rise and settle on every swing, then fades as the first card arrives.
+        // Scrubbed, so it retraces cleanly on the way back up. x / y only: act 2 owns
+        // xPercent / yPercent / scale / rotation, the float lives on the inner media. Never a spin.
+        const A = () => innerWidth * 0.24; // swing half-width
+        const zz = gsap.timeline({
+          scrollTrigger: {
+            trigger: ".it-intro", start: "bottom bottom",
+            endTrigger: ".it-card", end: "top 70%",
+            scrub: 0.6, invalidateOnRefresh: true,
+          },
+        });
+        [-1, 1, -0.6, 0].forEach((k, i) => {
+          zz.to(cube, { x: () => k * A(), duration: 1, ease: "sine.inOut" }, i)
+            .to(cube, { y: -18, duration: 0.5, ease: "sine.out" }, i)
+            .to(cube, { y: 0, duration: 0.5, ease: "sine.in" }, i + 0.5);
+        });
+        zz.to(cube, { autoAlpha: 0, duration: 1.8, ease: "power1.in" }, 2.2);   // mostly gone before it crosses the Work heading
+      }
     }
 
-    // dream feature: no pin on mobile — plain reveal + the quiet drift
-    gsap.fromTo(
-      ".it-dream-feature",
-      { autoAlpha: 0, y: 34 },
-      {
-        autoAlpha: 1,
-        y: 0,
-        scrollTrigger: { trigger: ".it-dream-feature", start: "top 88%", once: true },
-      }
-    );
-    gsap.fromTo(
-      ".it-dream-feature .it-dream-media img",
-      { yPercent: -6, scale: 1.14 },
-      {
-        yPercent: 6,
-        scale: 1.14,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".it-dream-feature",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true,
-        },
-      }
-    );
-
-    gsap.set(".it-card", { autoAlpha: 0, y: 40 });
+    if (GECKO) qa(".it-card").forEach((c) => c.classList.add("gk-card"));
+    else gsap.set(".it-card", { autoAlpha: 0, y: 40 });
     ScrollTrigger.batch(".it-card", {
       start: "top 90%",
       once: true,
-      onEnter: (els) =>
+      onEnter: (els) => GECKO
+        ? els.forEach((c, i) => { c.style.transitionDelay = (i * 0.08).toFixed(2) + "s"; c.classList.add("is-in"); })
+        :
         gsap.to(els, {
           autoAlpha: 1,
           y: 0,
@@ -2060,7 +2127,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
   {
     const track = q(".it-marquee-track");
     const wrap = q(".it-marquee");
-    if (track && wrap) {
+    if (track && wrap && !GECKO) {   // Firefox phones keep the CSS loop: it runs on the compositor, a JS tween repaints
       track.style.animation = "none"; // JS takes over from the CSS loop
       const tween = gsap.to(track, { xPercent: -50, duration: 52, ease: "none", repeat: -1 }); // keep px/s pace with the 6-item track
       wrap.addEventListener("mouseenter", () =>

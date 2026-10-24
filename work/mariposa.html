@@ -105,9 +105,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
@@ -190,24 +192,27 @@
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">Where it started</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--outgrow" aria-hidden="true"><i class="old"></i><i class="new"></i></div>
               <h3 class="it-cs-pillar-title">A business that outgrew its site.</h3>
-              <p class="it-cs-pillar-body">Mariposa went through a big change and needed a site that could keep up with them and help promote everything they do.</p>
+              <p class="it-cs-pillar-body">A big change, and a site that couldn’t keep up.</p>
             </div>
           </article>
-          <article class="it-cs-pillar" style="--i:1">
+          <article class="it-cs-pillar is-poster" style="--i:1">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What was in the way</p>
               <h3 class="it-cs-pillar-title">Black and white, and a PDF menu.</h3>
-              <p class="it-cs-pillar-body">Their five-year-old site was a coffee video, a short blurb and a download link. No food, and no sense of the space.</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--pdf" aria-hidden="true"><i><b>PDF</b></i></div>
+              <p class="it-cs-pillar-body">A coffee video, a short blurb and a download link.</p>
             </div>
           </article>
           <article class="it-cs-pillar" style="--i:2">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What we pressed</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--clip" data-src="/work/mariposa/tile"><video muted loop playsinline preload="none" aria-label="A Mariposa phin coffee photo drifting on the green hero, looping"></video></div>
               <h3 class="it-cs-pillar-title">Playful, warm, the whole menu on the page.</h3>
-              <p class="it-cs-pillar-body">Illustrations from their own menus, a hero you can drag and sway, the full menu as you scroll, and room for the space and their community events.</p>
+              <p class="it-cs-pillar-body">Their own menu illustrations, a hero that sways, the full menu.</p>
             </div>
           </article>
         </div>
@@ -222,50 +227,49 @@
       <div class="it-cs-gallery-head it-cs-head" data-cs-reveal>
         <p class="it-eyebrow">The work</p>
         <h2 class="it-h2">The whole site, <em>in motion.</em></h2>
-        <p class="it-cs-note">Recorded on the live site. The first frame scrolls the homepage on its own; the rest play as you reach them.</p>
+        <p class="it-cs-note">Recorded on the live site. Each clip plays as you reach it.</p>
       </div>
       <div class="it-cs-works">
-        <figure class="it-cs-work it-cs-work--auto" style="--c:1;--s:8">
+        <figure class="it-cs-work it-cs-work--hero" style="--c:1;--s:8">
           <div class="it-cs-browser">
             <div class="it-cs-browser-bar" aria-hidden="true"><span class="it-cs-browser-dots"><i></i><i></i><i></i></span><span class="it-cs-browser-url it-cs-mono">mariposacoffeebar.com</span></div>
-            <div class="it-cs-auto">
-              <div class="it-cs-px it-cs-auto-view"><img src="/work/mariposa/full-desktop.webp" alt="The full Mariposa Coffee Bar homepage, scrolling top to bottom" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-              <span class="it-cs-auto-bar" aria-hidden="true"><i></i></span>
-            </div>
+            <div class="it-cs-px it-cs-clip" style="aspect-ratio:16/10;border-radius:0"><img src="/work/mariposa/motion-hero.webp" alt="Mariposa Coffee Bar: the homepage hero in motion" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-hero.mp4" aria-label="Mariposa Coffee Bar: the homepage hero, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           </div>
-          <figcaption class="it-cs-mono"><span>Full homepage · scrolls on its own</span></figcaption>
+          <figcaption class="it-cs-mono"><span>Hero · the photos and doodles follow the mouse</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--phone" style="--c:10;--s:3;--o:clamp(2rem,9vw,9rem)">
-          <div class="it-cs-phone"><div class="it-cs-px"><img src="/work/mariposa/hero-mobile.webp" alt="Mariposa Coffee Bar on a phone" width="780" height="1688" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div></div>
+          <div class="it-cs-phone"><div class="it-cs-px it-cs-clip"><img src="/work/mariposa/motion-mobile.webp" alt="Mariposa Coffee Bar on a phone" width="780" height="1688" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-mobile.mp4" aria-label="Mariposa Coffee Bar on a phone, screen recording"></video><i class="it-cs-pending" aria-hidden="true">clip pending</i></div></div>
           <figcaption class="it-cs-mono"><span>On a phone</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
-          <div class="it-cs-px it-cs-clip"><img src="/work/mariposa/motion-hero.webp" alt="Mariposa Coffee Bar: hero · intro and the drifting doodles" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-hero.mp4" aria-label="Mariposa Coffee Bar: hero · intro and the drifting doodles, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Hero · intro and the drifting doodles</span></figcaption>
-        </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/mariposa/motion-about.webp" alt="Mariposa Coffee Bar: our story · the promo playing" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-about.mp4" aria-label="Mariposa Coffee Bar: our story · the promo playing, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Our story · the promo playing</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:5;--o:clamp(3rem,10vw,10rem)">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/mariposa/motion-magic.webp" alt="Mariposa Coffee Bar: where magic happens · fireflies" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-magic.mp4" aria-label="Mariposa Coffee Bar: where magic happens · fireflies, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Where magic happens · fireflies</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:6;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:3;--s:8">
           <div class="it-cs-px it-cs-clip"><img src="/work/mariposa/motion-events.webp" alt="Mariposa Coffee Bar: events · changing" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/mariposa/motion-events.mp4" aria-label="Mariposa Coffee Bar: events · changing, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Events · changing</span></figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- =============== NEXT / CTA =============== -->
+    <!-- =============== CTA + NEXT =============== -->
     <section class="it-cs-section it-cs-next">
-      <div class="it-cs-next-row" data-cs-reveal>
+      <div class="it-cs-cta" data-cs-reveal>
+        <p class="it-eyebrow">Your turn</p>
+        <h2 class="it-h2 it-cs-cta-title">Want one that <em>moves like this?</em></h2>
+        <p class="it-cs-cta-line">Design, motion and build, from the first call to launch.</p>
+        <a class="it-btn it-btn-mint it-btn-big it-cs-cta-btn" href="/book/">Book a call</a>
+      </div>
+      <div class="it-cs-next-row">
         <a class="it-cs-next-link" href="/work/visionquest.html">
           <span class="it-eyebrow">Next up</span>
           <span class="it-cs-next-title">Vision Quest →</span>
         </a>
-        <a class="it-btn it-btn-mint" href="/book/">Book a call</a>
+        <a class="it-cs-all it-cs-mono" href="/#work">All work</a>
       </div>
       <p class="it-cs-footnote">Imagine Tofu · San Leandro, CA → everywhere · <a href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a></p>
     </section>

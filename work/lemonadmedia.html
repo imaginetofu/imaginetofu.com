@@ -105,9 +105,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
@@ -190,24 +192,27 @@
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">Where it started</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--num it-cs-pillar-art--quote" aria-hidden="true">&ldquo;</div>
               <h3 class="it-cs-pillar-title">A referral, and a site time forgot.</h3>
-              <p class="it-cs-pillar-body">Eddie’s classic WordPress site hadn’t been touched in years. He wanted one that showed both him and the business he’d built.</p>
+              <p class="it-cs-pillar-body">Eddie’s WordPress site hadn’t been touched in years.</p>
             </div>
           </article>
-          <article class="it-cs-pillar" style="--i:1">
+          <article class="it-cs-pillar is-poster" style="--i:1">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What was in the way</p>
               <h3 class="it-cs-pillar-title">Great photos, lost in the noise.</h3>
-              <p class="it-cs-pillar-body">Bright white pages and a gallery of tiny squares you had to click one by one. The work deserved better than thumbnails.</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--thumbs" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+              <p class="it-cs-pillar-body">White pages and tiny squares you clicked one by one.</p>
             </div>
           </article>
           <article class="it-cs-pillar" style="--i:2">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What we pressed</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--clip" data-src="/work/lemonadmedia/tile"><video muted loop playsinline preload="none" aria-label="Lemonad Media hero photos changing, looping"></video></div>
               <h3 class="it-cs-pillar-title">One frame at a time.</h3>
-              <p class="it-cs-pillar-body">A custom build in their greens, photos that arrive one by one as you scroll, case studies that show the thinking, full SEO, and a contact form wired into GoHighLevel.</p>
+              <p class="it-cs-pillar-body">Their greens, photos that arrive as you scroll, SEO and GoHighLevel.</p>
             </div>
           </article>
         </div>
@@ -222,58 +227,61 @@
       <div class="it-cs-gallery-head it-cs-head" data-cs-reveal>
         <p class="it-eyebrow">The work</p>
         <h2 class="it-h2">The whole site, <em>in motion.</em></h2>
-        <p class="it-cs-note">Recorded on the live site. The first frame scrolls the homepage on its own; the rest play as you reach them.</p>
+        <p class="it-cs-note">Recorded on the live site. Each clip plays as you reach it.</p>
       </div>
       <div class="it-cs-works">
-        <figure class="it-cs-work it-cs-work--auto" style="--c:1;--s:8">
+        <figure class="it-cs-work it-cs-work--hero" style="--c:1;--s:8">
           <div class="it-cs-browser">
             <div class="it-cs-browser-bar" aria-hidden="true"><span class="it-cs-browser-dots"><i></i><i></i><i></i></span><span class="it-cs-browser-url it-cs-mono">lemonadmedia.com</span></div>
-            <div class="it-cs-auto">
-              <div class="it-cs-px it-cs-auto-view"><img src="/work/lemonadmedia/full-desktop.webp" alt="The full Lemonad Media homepage, scrolling top to bottom" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-              <span class="it-cs-auto-bar" aria-hidden="true"><i></i></span>
-            </div>
+            <div class="it-cs-px it-cs-clip" style="aspect-ratio:16/10;border-radius:0"><img src="/work/lemonadmedia/motion-hero.webp" alt="Lemonad Media: the homepage hero in motion" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-hero.mp4" aria-label="Lemonad Media: the homepage hero, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           </div>
-          <figcaption class="it-cs-mono"><span>Full homepage · scrolls on its own</span></figcaption>
+          <figcaption class="it-cs-mono"><span>Hero · clicking through the frames</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--phone" style="--c:10;--s:3;--o:clamp(2rem,9vw,9rem)">
-          <div class="it-cs-phone"><div class="it-cs-px"><img src="/work/lemonadmedia/hero-mobile.webp" alt="Lemonad Media on a phone" width="780" height="1688" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div></div>
+          <div class="it-cs-phone"><div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-mobile.webp" alt="Lemonad Media on a phone" width="780" height="1688" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-mobile.mp4" aria-label="Lemonad Media on a phone, screen recording"></video><i class="it-cs-pending" aria-hidden="true">clip pending</i></div></div>
           <figcaption class="it-cs-mono"><span>On a phone</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
-          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-hero.webp" alt="Lemonad Media: hero · clicking through the frames" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-hero.mp4" aria-label="Lemonad Media: hero · clicking through the frames, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Hero · clicking through the frames</span></figcaption>
+          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-recent.webp" alt="Lemonad Media: recent work · the sideways parallax" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-recent.mp4" aria-label="Lemonad Media: recent work · the sideways parallax, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
+          <figcaption class="it-cs-mono"><span>Recent work · the sideways parallax</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
-          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-recent.webp" alt="Lemonad Media: recent work · the side parallax" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-recent.mp4" aria-label="Lemonad Media: recent work · the side parallax, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Recent work · the side parallax</span></figcaption>
-        </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-shoots.webp" alt="Lemonad Media: what we shoot · hover" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-shoots.mp4" aria-label="Lemonad Media: what we shoot · hover, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>What we shoot · hover</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:6;--s:7">
-          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-service.webp" alt="Lemonad Media: a service page · loading and scrolling" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-service.mp4" aria-label="Lemonad Media: a service page · loading and scrolling, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>A service page · loading and scrolling</span></figcaption>
+        <figure class="it-cs-work it-cs-work--screen" style="--c:2;--s:6">
+          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-service.webp" alt="Lemonad Media: a service page · images loading in, then the scroll" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-service.mp4" aria-label="Lemonad Media: a service page · images loading in, then the scroll, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
+          <figcaption class="it-cs-mono"><span>A service page · images loading in, then the scroll</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:2;--s:10">
-          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-casestudy.webp" alt="Lemonad Media: case studies · frame by frame" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-casestudy.mp4" aria-label="Lemonad Media: case studies · frame by frame, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Case studies · frame by frame</span></figcaption>
+        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:6">
+          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-blackcat.webp" alt="Lemonad Media: case study · the black cat, every frame" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-blackcat.mp4" aria-label="Lemonad Media: case study · the black cat, every frame, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
+          <figcaption class="it-cs-mono"><span>Case study · The Black Cat, every frame</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:7;--s:6;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px"><img src="/work/lemonadmedia/screen-3.webp" alt="Lemonad Media: a decade behind the bar" width="1440" height="900" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
           <figcaption class="it-cs-mono"><span>A decade behind the bar</span></figcaption>
+        </figure>
+        <figure class="it-cs-work it-cs-work--screen" style="--c:6;--s:6">
+          <div class="it-cs-px it-cs-clip"><img src="/work/lemonadmedia/motion-caribbean.webp" alt="Lemonad Media: case study page · caribbean cocktails" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/lemonadmedia/motion-caribbean.mp4" aria-label="Lemonad Media: case study page · caribbean cocktails, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
+          <figcaption class="it-cs-mono"><span>Case study page · Caribbean Cocktails</span></figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- =============== NEXT / CTA =============== -->
+    <!-- =============== CTA + NEXT =============== -->
     <section class="it-cs-section it-cs-next">
-      <div class="it-cs-next-row" data-cs-reveal>
+      <div class="it-cs-cta" data-cs-reveal>
+        <p class="it-eyebrow">Your turn</p>
+        <h2 class="it-h2 it-cs-cta-title">Want one that <em>moves like this?</em></h2>
+        <p class="it-cs-cta-line">Design, motion and build, from the first call to launch.</p>
+        <a class="it-btn it-btn-mint it-btn-big it-cs-cta-btn" href="/book/">Book a call</a>
+      </div>
+      <div class="it-cs-next-row">
         <a class="it-cs-next-link" href="/work/nationalentity.html">
           <span class="it-eyebrow">Next up</span>
           <span class="it-cs-next-title">National Entity →</span>
         </a>
-        <a class="it-btn it-btn-mint" href="/book/">Book a call</a>
+        <a class="it-cs-all it-cs-mono" href="/#work">All work</a>
       </div>
       <p class="it-cs-footnote">Imagine Tofu · San Leandro, CA → everywhere · <a href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a></p>
     </section>

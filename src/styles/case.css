@@ -56,7 +56,7 @@
 
 /* ================= HERO ================= */
 
-.it-cs-hero { position: relative; padding-top: calc(var(--it-section-pad) + 3rem); }
+.it-cs-hero { position: relative; padding-top: calc(var(--it-section-pad) + 3rem); overflow-x: clip; } /* the aura hangs off the right edge: clip it here (the body clip is handed to the viewport, which phones still let you pan) */
 .it-cs-aura {
   position: absolute;
   top: -6%;
@@ -124,7 +124,7 @@ html.reduced .it-cs-aura { animation: none; }
      --pg     gap factor (0 → 1)
      --pround tile corner factor (0 → 1: inner corners round off)
      rotateY  the flip to the backs (scope / problem / solution)
-   Static (phones, reduced motion): each tile is a slice band + its text. */
+   Static (phones, reduced motion): each tile is just its text card (no image). */
 
 .it-cs-pillars { padding-block: calc(var(--it-section-pad) * 0.5) 0; }
 .it-cs-pillars-pin { display: grid; gap: clamp(1.4rem, 3vw, 2.2rem); }
@@ -180,6 +180,82 @@ html.reduced .it-cs-aura { animation: none; }
 }
 .it-cs-pillar-title { margin: 0; font-family: var(--it-font-display); font-weight: 460; font-size: clamp(1.3rem, 2vw, 1.75rem); line-height: 1.15; color: var(--it-cream); }
 .it-cs-pillar-body { margin: 0; line-height: 1.6; color: var(--it-cream-80); font-size: clamp(0.95rem, 1.1vw, 1.02rem); }
+
+/* story tiles v2 (opt-in per page): each back gets its own visual so the
+   three read as before / problem / after, not three blocks of text.
+   --num: a big numeral; .is-poster: the headline fills the tile;
+   --clip: a small looping crop of the finished site. */
+.it-cs-pillar-art { flex: 1 1 auto; min-height: 0; display: flex; align-items: flex-end; margin-top: 2.6rem; }
+.it-cs-pillar-art--num {
+  font-family: var(--it-font-accent); font-style: italic; font-weight: 400;
+  font-size: clamp(5rem, 11vw, 10rem); line-height: 0.8; letter-spacing: -0.04em;
+  color: var(--it-mint);
+}
+.it-cs-pillar-art--clip { position: relative; align-items: stretch; border-radius: 14px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--it-hairline); margin-bottom: 0.4rem; }
+.it-cs-pillar-art--clip video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+.it-cs-pillar-art--clip.is-pending { display: none; }
+.it-cs-pillar-back { container-type: inline-size; }
+.it-cs-pillar.is-poster .it-cs-pillar-title { font-size: clamp(1.7rem, 16cqi, 3.4rem); overflow-wrap: break-word; line-height: 0.98; letter-spacing: -0.015em; }
+.it-cs-pillar:has(.it-cs-pillar-art) .it-cs-pillar-body,
+.it-cs-pillar.is-poster .it-cs-pillar-body { font-size: clamp(0.92rem, 1vw, 0.98rem); }
+.it-cs-pillars.is-live .it-cs-pillar.is-poster .it-cs-pillar-title { margin-top: 2.8rem; margin-bottom: auto; }
+.it-cs-pillar-art--mark { justify-content: flex-end; margin-top: 0; font-size: clamp(7rem, 15vw, 13rem); line-height: 0.72; color: var(--it-eye-dark); opacity: 0.9; }
+.it-cs-pillar-art--quote { font-size: clamp(12rem, 24vw, 21rem); line-height: 0.62; align-items: center; margin-left: -0.06em; transform: translateY(2.4rem); }
+.it-cs-pillar-art--load { align-items: center; }
+.it-cs-pillar-art--load i { position: relative; display: block; width: 100%; height: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--it-mint) 16%, transparent); }
+/* a load that crawls, stalls, crawls, and never quite gets there */
+.it-cs-pillar-art--load i::after { content: ""; position: absolute; inset: 0 auto 0 0; width: 0; border-radius: inherit; background: var(--it-mint); animation: it-cs-crawl 7s cubic-bezier(.2,.6,.3,1) infinite; }
+@keyframes it-cs-crawl { 0% { width: 0; } 30% { width: 34%; } 55% { width: 41%; } 80% { width: 63%; } 96% { width: 66%; opacity: 1; } 100% { width: 66%; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .it-cs-pillar-art--load i::after { animation: none; width: 45%; } }
+.it-cs-pillar-art--outgrow { position: relative; align-items: stretch; color: var(--it-mint); }
+.it-cs-pillar-art--outgrow i { position: absolute; display: block; border-radius: 8px; }
+/* the old site: a small dashed frame; the business: a solid block that has grown past it */
+.it-cs-pillar-art--outgrow .old { left: 0; bottom: 0.5rem; width: 42%; aspect-ratio: 4 / 3; border: 2px dashed currentColor; opacity: 0.55; }
+.it-cs-pillar-art--outgrow .new { left: 18%; bottom: 1.6rem; width: 70%; aspect-ratio: 4 / 3; background: currentColor; opacity: 0.9; transform-origin: 0 100%; animation: it-cs-grow 4.5s cubic-bezier(.5,0,.2,1) infinite alternate; }
+@keyframes it-cs-grow { from { transform: scale(0.55); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .it-cs-pillar-art--outgrow .new { animation: none; } }
+.it-cs-pillar-art--pdf { align-items: center; justify-content: center; }
+.it-cs-pillar-art--pdf i { position: relative; display: grid; place-items: end start; width: 42%; max-width: 7.5rem; aspect-ratio: 3 / 4; padding: 0.7rem; border-radius: 6px; background: #fff; box-shadow: 0 14px 30px -14px rgba(0,0,0,.45); transform: rotate(-6deg); clip-path: polygon(0 0, 72% 0, 100% 22%, 100% 100%, 0 100%); }
+.it-cs-pillar-art--pdf i::before { content: ""; position: absolute; top: 0; right: 0; width: 28%; height: 22%; background: #cfcfcf; clip-path: polygon(0 0, 100% 100%, 0 100%); }
+.it-cs-pillar-art--pdf i::after { content: ""; position: absolute; left: 0.7rem; right: 0.7rem; top: 34%; height: 30%; background: repeating-linear-gradient(#111 0 2px, transparent 2px 9px); opacity: 0.35; }
+.it-cs-pillar-art--pdf b { font-family: var(--it-font-mono); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.12em; color: #fff; background: #111; padding: 0.2em 0.45em; border-radius: 3px; }
+.it-cs-pillar-art--states { flex-direction: column; justify-content: flex-end; align-items: flex-start; gap: 0.05rem; padding-bottom: 0.6rem; color: var(--it-mint); }
+.it-cs-pillar-art--states span { font-family: var(--it-font-display); font-weight: 600; text-transform: uppercase; letter-spacing: -0.01em; line-height: 0.95; font-size: clamp(0.9rem, 1.5vw, 1.35rem); opacity: 0.35; }
+.it-cs-pillar-art--states span:nth-child(2n) { opacity: 0.6; }
+.it-cs-pillar-art--states span:nth-child(4) { font-size: clamp(1.6rem, 2.8vw, 2.5rem); opacity: 1; font-family: var(--it-font-accent); font-style: italic; font-weight: 400; text-transform: none; }
+.it-cs-pillar-art--blend { position: relative; }
+.it-cs-pillar-art--blend i { position: absolute; top: 50%; width: 52%; aspect-ratio: 1; border-radius: 50%; mix-blend-mode: multiply; animation: it-cs-blend 6s ease-in-out infinite alternate; }
+.it-cs-pillar-art--blend i:first-child { left: 6%; background: #e7759b; transform: translate(0, -50%); }
+.it-cs-pillar-art--blend i:last-child { right: 6%; background: #78c7b4; transform: translate(0, -50%); animation-direction: alternate-reverse; }
+@keyframes it-cs-blend { from { translate: -10% 0; } to { translate: 18% 0; } }
+.it-cs-pillar-art--blend i:last-child { animation-name: it-cs-blend-r; }
+@keyframes it-cs-blend-r { from { translate: 10% 0; } to { translate: -18% 0; } }
+.it-cs-pillar-art--timeline { align-items: center; justify-content: space-between; position: relative; color: var(--it-mint); padding-inline: 0.2rem; }
+.it-cs-pillar-art--timeline::before { content: ""; position: absolute; left: 0.2rem; right: 0.2rem; top: 50%; height: 2px; background: currentColor; opacity: 0.35; }
+.it-cs-pillar-art--timeline i { position: relative; width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 2px solid currentColor; background: color-mix(in srgb, var(--it-mint) 16%, var(--it-ground)); }
+.it-cs-pillar-art--timeline i.now { width: 1.6rem; height: 1.6rem; background: currentColor; box-shadow: 0 0 0 6px color-mix(in srgb, var(--it-mint) 25%, transparent); }
+.it-cs-pillar-art--pulse { align-items: center; }
+.it-cs-pillar-art--pulse svg { width: 100%; height: 4.5rem; overflow: visible; }
+.it-cs-pillar-art--pulse polyline { fill: none; stroke: var(--it-eye-dark); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 320; stroke-dashoffset: 320; animation: it-cs-pulse 2.8s ease-in-out infinite; }
+@keyframes it-cs-pulse { 0% { stroke-dashoffset: 320; } 55% { stroke-dashoffset: 0; } 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .it-cs-pillar-art--blend i, .it-cs-pillar-art--pulse polyline { animation: none; stroke-dashoffset: 0; } }
+.it-cs-pillar-art--thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; align-content: center; justify-self: stretch; }
+.it-cs-pillar-art--thumbs i { aspect-ratio: 1; border-radius: 3px; background: var(--it-eye-dark); opacity: 0.16; }
+.it-cs-pillar-art--thumbs i:nth-child(3n + 1) { opacity: 0.28; }
+.it-cs-pillar-art--thumbs i:nth-child(7) { opacity: 0.85; }
+.it-cs-pillar-art--tags { flex-wrap: wrap; align-content: center; gap: 0.45rem; }
+.it-cs-pillar-art--tags span { padding: 0.32em 0.85em; border: 1.5px solid currentColor; border-radius: 999px; font-family: var(--it-font-display); font-size: clamp(0.85rem, 1.05vw, 1rem); line-height: 1.1; color: var(--it-eye-dark); }
+.it-cs-pillar-art--tags span:nth-child(odd) { background: var(--it-eye-dark); color: var(--it-peach); border-color: var(--it-eye-dark); }
+.it-cs-pillar-art--trio { gap: 0.7rem; align-items: flex-end; color: var(--it-mint); padding-bottom: 0.6rem; }
+.it-cs-pillar-art--trio i { display: block; border: 2px solid currentColor; }
+.it-cs-pillar-art--trio .o { width: 3.1rem; aspect-ratio: 1; border-radius: 50%; }
+.it-cs-pillar-art--trio .r { width: 4.6rem; aspect-ratio: 4 / 3; border-radius: 6px; background: linear-gradient(to top right, transparent calc(50% - 1px), currentColor 50%, transparent calc(50% + 1px)); }
+.it-cs-pillar-art--trio .f { width: 3.6rem; padding: 0.55rem 0.5rem; border-radius: 6px; display: grid; gap: 0.38rem; }
+.it-cs-pillar-art--trio .f b { display: block; height: 2px; background: currentColor; }
+.it-cs-pillar-art--trio .f b:last-child { width: 55%; }
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art--mark { display: none; }
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art--clip { aspect-ratio: 16 / 9; flex: none; }
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art { margin-top: 0.4rem; }
 
 /* the live, pinned version (desktop + motion): one capture across three
    tall tiles, flush, that open and flip */
@@ -240,6 +316,9 @@ html.reduced .it-cs-aura { animation: none; }
 .it-cs-pillar:nth-child(3) .it-cs-pillar-back { background: color-mix(in srgb, var(--it-cream) 10%, var(--it-ground)); }
 /* static tiles: the peach card stays readable without the flip too */
 .it-cs-pillars:not(.is-live) .it-cs-pillar:nth-child(2) { background: var(--it-peach); border-color: transparent; }
+/* static tiles (phones, reduced motion): text only, no slice of the capture on top (Dennis, Oct 24).
+   The desktop flip keeps its image fronts: the capture splitting into three is the move there. */
+.it-cs-pillars:not(.is-live) .it-cs-pillar-front { display: none; }
 
 /* ================= WORKS: big frames on an offset grid =================
    AnimMaster scroll-57 (offset editorial grid, frames de-pixelate in steps)
@@ -261,7 +340,9 @@ html.reduced .it-cs-aura { animation: none; }
   .it-cs-work { grid-column: var(--c) / span var(--s); padding-top: var(--o, 0); }
 }
 .it-cs-work { margin: 0; min-width: 0; }
-.it-cs-work figcaption { margin-top: 0.85rem; overflow: hidden; }
+.it-cs-work figcaption { margin-top: 0.95rem; overflow: hidden; }
+/* captions: a touch bigger and brighter than the page micro-labels so they read at a glance */
+.it-cs-work figcaption.it-cs-mono { font-size: 0.74rem; letter-spacing: 0.14em; color: var(--it-cream-80); }
 .it-cs-work figcaption > span { display: flex; gap: 0.9em; flex-wrap: wrap; }
 .it-cs-work figcaption b { font-weight: 400; color: var(--it-peach); }
 
@@ -274,6 +355,7 @@ html.reduced .it-cs-aura { animation: none; }
 }
 .it-cs-px > img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .it-cs-px:not(.is-revealed) > img { opacity: 0; }
+.it-cs-px.is-fade > img { transition: opacity 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94); }   /* phones: plain fade-in (case-works.js) */
 .it-cs-px-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; transition: opacity 0.3s linear; }
 .it-cs-work--screen .it-cs-px { aspect-ratio: 16 / 10; border: 1px solid var(--it-cream-28); }
 /* motion clip: poster first, the video fades in once it is actually playing */
@@ -313,6 +395,15 @@ html.reduced .it-cs-aura { animation: none; }
 }
 .it-cs-phone .it-cs-px { aspect-ratio: 9 / 19.5; border-radius: 25px; }
 @media (max-width: 899px) { .it-cs-phone { width: min(78%, 320px); } }
+/* desktop: the phone overlaps the first frame's bottom-right corner, laptop + phone
+   style, so the pair reads as one picture and the column has no dead space */
+@media (min-width: 900px) {
+  .it-cs-works > .it-cs-work:first-child { --c: 1 !important; --s: 10 !important; grid-row: 1; }
+  .it-cs-works > .it-cs-work--phone { --c: 10 !important; --s: 3 !important; --o: clamp(6rem, 15vw, 15rem) !important; grid-row: 1; position: relative; z-index: 2; }
+  .it-cs-works > .it-cs-work--phone .it-cs-phone { width: min(100%, 330px); margin-inline: auto 0; box-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.7), 0 0 0 1px rgb(0 0 0 / 0.25); background: color-mix(in srgb, var(--it-ground) 70%, var(--it-cream)); }
+  .it-cs-works > .it-cs-work--phone figcaption { text-align: right; }
+  .it-cs-works > .it-cs-work--phone figcaption > span { justify-content: flex-end; }
+}
 
 /* ================= OUTCOME + NEXT ================= */
 
@@ -336,7 +427,17 @@ html.reduced .it-cs-aura { animation: none; }
   color: var(--it-cream-65);
 }
 
-.it-cs-next { border-top: 1px solid var(--it-hairline); }
+/* closing CTA: bookends the gallery head ("The whole site, in motion.") */
+.it-cs-next { border-top: 1px solid var(--it-hairline); padding-top: clamp(4.5rem, 11vw, 9rem); }
+.it-cs-cta { text-align: center; max-width: 60rem; margin: 0 auto clamp(4rem, 9vw, 7rem); }
+.it-cs-cta .it-eyebrow { justify-content: center; }
+.it-cs-cta-title { font-size: clamp(2.6rem, 6.6vw, 5.6rem); line-height: 1; margin: 0.6rem 0 1.1rem; text-wrap: balance; }
+.it-cs-cta-line { color: var(--it-cream-65); font-size: clamp(1rem, 1.4vw, 1.15rem); margin: 0 auto 2.2rem; max-width: 48ch; text-wrap: balance; }
+.it-cs-cta-btn { box-shadow: 0 0 0 0 var(--it-mint-glow); transition: transform 0.3s var(--it-ease-reveal), background-color 0.3s, box-shadow 0.5s; }
+.it-cs-cta-btn:hover { box-shadow: 0 0 0 10px transparent, 0 10px 40px -8px var(--it-mint-glow); }
+.it-cs-all { text-decoration: none; transition: color 0.3s; font-size: 0.74rem; color: var(--it-cream-80); }
+.it-cs-all:hover { color: var(--it-mint); }
+.it-cs-next .it-cs-next-row { padding-top: 2rem; border-top: 1px solid var(--it-hairline); }
 .it-cs-next-row {
   display: flex;
   align-items: center;

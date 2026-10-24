@@ -2,7 +2,7 @@
    Each real-work card carries a poster (<img>) and a muted scroll loop
    (<video preload="none">). Still by default, motion on demand:
      • fine pointer (desktop): play on hover / focus, pause + rewind on leave
-     • coarse pointer (touch): play while the card is mostly in view
+     • coarse pointer (touch): poster only, no autoplay (perf)
    Reduced motion: never attach a source; the poster is the card.
    Sources are attached lazily so eight cards don't cost eight requests. */
 
@@ -35,12 +35,12 @@ export function initWorkCards({ reduced }) {
     if (!v) return;
     v.play().catch(() => card.classList.add("is-still"));
   };
-  const stop = (card) => {
+  const stop = (card, rewind = true) => {
     const v = card.querySelector(".it-shot-loop");
     if (!v) return;
     v.pause();
     card.classList.remove("is-playing");
-    try { v.currentTime = 0; } catch { /* not loaded yet */ }
+    if (rewind) { try { v.currentTime = 0; } catch { /* not loaded yet */ } }
   };
 
   if (fine) {
@@ -53,10 +53,6 @@ export function initWorkCards({ reduced }) {
     return;
   }
 
-  // touch: one card at a time, the one most in view
-  const io = new IntersectionObserver(
-    (entries) => entries.forEach((e) => (e.intersectionRatio >= 0.6 ? play(e.target) : stop(e.target))),
-    { threshold: [0, 0.6] }
-  );
-  cards.forEach((card) => io.observe(card));
+  // touch: posters only. The loops used to start when a card settled in view; on a phone that is a
+  // network fetch + video decode competing with the scroll, for a clip that plays a few seconds.
 }

@@ -155,3 +155,57 @@ testimonials, stats, or social links.
   service pills read build / move / tend.
 - Numbers kept only where they count: work card index, "Case study 04 / 07".
 - Pre-change copies: `notes/backup-pre-bricolage/`.
+
+## Mobile performance layer (Oct 23 2026)
+Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop untouched.
+- `src/perf.js` — `LITE` (coarse pointer / hover:none / <900px; also set as `html.is-lite` in the
+  inline `<head>` script so CSS applies before first paint), `TOUCH` (coarse pointer), `isOn(section)`,
+  and `initPerf()` (LITE only): an IntersectionObserver governor that adds `.is-off` to sections more
+  than 35% of a screen away (CSS animations pause via `lite.css`) and pauses every infinite GSAP tween
+  inside them (hero sprouts, cube float, marquee…). The hero cube counts as alive while Hello is on
+  screen; on wide layouts it is never paused (it rides the whole page there).
+- `src/styles/lite.css` (imported last, also by case + book): kills the fixed `mix-blend-mode` film
+  grain, swaps every `backdrop-filter` for a more opaque ground, feathers the big conic tile auras with a
+  mask instead of a 72px blur, hides the creature halo (invisible under its own blur) + dispersion ghosts.
+  Small aura blobs KEEP their blur on purpose — without it they glow brighter than the original.
+- Touch devices scroll natively: no Lenis (main/case/book). `main.js` ships a stand-in with
+  `stop/start/scrollTo` so the preloader lock, menu and back-to-top still work. `ScrollTrigger.config
+  ({ ignoreMobileResize: true })` everywhere (URL-bar collapses were re-measuring every trigger).
+- `tile-art.js`: phones draw ONE static mosaic frame (was 3 canvases × 20–30fps with pixel readback);
+  resize only re-lays-out on width change.
+- `dream-glass.js` (LITE): dpr 1 trail canvas, ring N 84 @ ≤1.5×, motes ≤36, resonance canvas at half
+  res, no ghosts; per-frame transforms written straight to `style.transform` (no `gsap.set` tween per
+  call); phone station loops are primed a scene ahead (as desktop already did).
+- `work-cards.js` (touch): a card's loop starts only after the scroll rests 260ms on it, and stopping
+  never seeks.
+- `motion.js`: hero jiggle/blink/rotating-word idle loops skip while the hero is off-screen; the mobile
+  tip-sway ticker uses `quickSetter` + a sub-pixel gate; dead `.it-dream-feature` mobile block removed.
+- How it was measured (4× CPU throttle, 412×915@3×, real wheel input, headless Chrome): frame avg
+  50.7 → ~30 ms, >50ms frames 33% → ~8%, long tasks in Services 1 s/swipe → 0. Harness scripts live in
+  the session scratchpad only; rebuild one from `puppeteer-core` (already a devDependency) if needed.
+- Phones get `public/dream/hero-m.webm|mp4` (1280x720 re-encode of hero.mp4, VP9 crf 34 / x264 crf 25,
+  same 9.25s seam; served from the site origin, not Bunny). placeMobile sizes the element explicitly, so
+  the framing is identical (checked: same box, same cube point).
+- Canvas DPR caps on phones: tile-art 1.5, ring 1.25, hero motes 1.25, dream trail 1, reso half-res.
+  tile-art's rAF loop sleeps on phones while no window is near the screen.
+- Google Fonts load non-blocking (preload + onload swap, noscript fallback) on every page; request
+  trimmed to what is rendered: Bricolage wght 400..700, Fraunces ITALIC only 400..700 (upright was never
+  used), Hanken 400/500/600, Space Mono 400/700.
+- `?perf` shows an fps readout; `?x=blend,canvas,video,filter,anim,fixed` switches cost classes off.
+- Firefox desktop (Oct 23): holding a dream transition used to decode all 61 frames (~225MB) at once and
+  stalled Firefox ~10 frames at p 0.15-0.21 / 0.61-0.67. In Firefox only (`WINDOWED`), makeSeq keeps a
+  +-8 frame window around the scrub position plus both hand-off frames; Chrome keeps hold-everything.
+  Decoding also goes through an inline worker (`decodeBitmap`), falling back to main-thread decoding.
+  Measured in real Firefox (wheel sweep through the pin): 26-29 slow frames to 15-20.
+- Firefox on phones (`GECKO` in perf.js, html.is-gecko; Oct 24): Pixel traces showed Firefox's renderer
+  redrawing every tile a script touches during a scroll. In that mode reveals (`[data-reveal]`,
+  `[data-split]`, the Hello statement, mobile work cards) are CSS transitions driven by `.is-in`
+  (`.gk-rv/.gk-split/.gk-stmt/.gk-card` in lite.css), tile parallax is off, the cube's Hello fade is timed,
+  the marquee keeps its CSS loop, hero motes draw at half rate, and the After Dark card loops that can't
+  run on the compositor (border drift, box-shadow pulse, --it-tr trail) hold still. `?x=nogecko` = A/B.
+- Oct 24 (phones): case-page story pillars are plain text cards when static (fronts hidden, row loses
+  role="img"; the desktop flip keeps its image fronts). Case frames fade in (`.is-fade`, 0.6s) instead of
+  the pixel sweep. `.it-cs-hero` clips x (its aura made every case page 25px wider than the phone).
+  Home: act 3 on phones is a scrubbed zig-zag (x +-24vw, a -18px hop per swing) from Hello's bottom to the
+  first card at 70%, fading from 55% of the way (desktop keeps its fade). After Dark's frame loop now runs
+  until the stage has fully left the screen (it froze 0.4 screens after the pin let go).

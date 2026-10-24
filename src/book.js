@@ -10,13 +10,16 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/case.css";
 import "./styles/book.css";
+import "./styles/lite.css";
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { TOUCH } from "./perf.js";
 import { initPageTransition } from "./page-transition.js";
 
 gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true }); // URL-bar collapses must not re-measure every trigger
 
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const motion = !reduced;
@@ -26,7 +29,7 @@ initPageTransition({ gsap, reduced });
 /* ---------- smooth scroll ---------- */
 
 let lenis = null;
-if (motion) {
+if (motion && !TOUCH) {   // touch keeps the browser's own scroll: smoother, and no main-thread smoothing loop
   lenis = new Lenis({ duration: 1.15 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -81,7 +84,7 @@ function loadEmbed() {
 
 function scrollToEl(el, offset = -90) {
   if (lenis) lenis.scrollTo(el, { offset, duration: 1.2 });
-  else el.scrollIntoView({ block: "start" });
+  else scrollTo({ top: el.getBoundingClientRect().top + scrollY + offset, behavior: reduced ? "auto" : "smooth" });
 }
 
 function pick(type, { scroll = true, focus = false } = {}) {

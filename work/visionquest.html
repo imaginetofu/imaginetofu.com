@@ -105,9 +105,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
@@ -190,24 +192,27 @@
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">Where it started</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--states" aria-hidden="true"><span>Welcome</span><span>Embrace</span><span>Imagine</span><span>Feel</span><span>Intense</span><span>Balance</span></div>
               <h3 class="it-cs-pillar-title">A State of Tramce.</h3>
-              <p class="it-cs-pillar-body">The theme was the states of Tram, each one a feeling and all of them her. The site borrowed the language and poster look of a trance night.</p>
+              <p class="it-cs-pillar-body">Each feeling named after an Armin van Buuren album, set like a trance-night poster.</p>
             </div>
           </article>
-          <article class="it-cs-pillar" style="--i:1">
+          <article class="it-cs-pillar is-poster" style="--i:1">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What was in the way</p>
               <h3 class="it-cs-pillar-title">How do you design a feeling?</h3>
-              <p class="it-cs-pillar-body">Each state needed its own mood, and the site had to move between them the way emotions do: blending, not switching.</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--blend" aria-hidden="true"><i></i><i></i></div>
+              <p class="it-cs-pillar-body">Moods that blend into each other instead of switching.</p>
             </div>
           </article>
           <article class="it-cs-pillar" style="--i:2">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What we pressed</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--clip" data-src="/work/visionquest/tile"><video muted loop playsinline preload="none" aria-label="Tram’s portrait for the Intense state over a red shape, looping"></video></div>
               <h3 class="it-cs-pillar-title">Color that shifts like a mood.</h3>
-              <p class="it-cs-pillar-body">A portrait of Tram for every state over a living, morphing shape, smooth color shifts between feelings, a warm welcome, a sign-up countdown, and every Tram event listed by year.</p>
+              <p class="it-cs-pillar-body">A portrait for every state over a shape that keeps morphing.</p>
             </div>
           </article>
         </div>
@@ -222,21 +227,18 @@
       <div class="it-cs-gallery-head it-cs-head" data-cs-reveal>
         <p class="it-eyebrow">The work</p>
         <h2 class="it-h2">The whole site, <em>in motion.</em></h2>
-        <p class="it-cs-note">Recorded on the live site. The first frame scrolls the homepage on its own; the rest play as you reach them.</p>
+        <p class="it-cs-note">Recorded on the live site. Each clip plays as you reach it.</p>
       </div>
       <div class="it-cs-works">
-        <figure class="it-cs-work it-cs-work--auto" style="--c:1;--s:8">
+        <figure class="it-cs-work it-cs-work--hero" style="--c:1;--s:8">
           <div class="it-cs-browser">
             <div class="it-cs-browser-bar" aria-hidden="true"><span class="it-cs-browser-dots"><i></i><i></i><i></i></span><span class="it-cs-browser-url it-cs-mono">visionquestevent.com</span></div>
-            <div class="it-cs-auto">
-              <div class="it-cs-px it-cs-auto-view"><img src="/work/visionquest/full-desktop.webp" alt="The full Vision Quest homepage, scrolling top to bottom" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-              <span class="it-cs-auto-bar" aria-hidden="true"><i></i></span>
-            </div>
+            <div class="it-cs-px it-cs-clip" style="aspect-ratio:16/10;border-radius:0"><img src="/work/visionquest/motion-hero.webp" alt="Vision Quest: the homepage hero in motion" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-hero.mp4" aria-label="Vision Quest: the homepage hero, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           </div>
-          <figcaption class="it-cs-mono"><span>Full homepage · scrolls on its own</span></figcaption>
+          <figcaption class="it-cs-mono"><span>Hero · A State of Tramce, then the next slide</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--phone" style="--c:10;--s:3;--o:clamp(2rem,9vw,9rem)">
-          <div class="it-cs-phone"><div class="it-cs-px"><img src="/work/visionquest/hero-mobile.webp" alt="Vision Quest on a phone" width="780" height="1688" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div></div>
+          <div class="it-cs-phone"><div class="it-cs-px it-cs-clip"><img src="/work/visionquest/motion-mobile.webp" alt="Vision Quest on a phone" width="780" height="1688" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-mobile.mp4" aria-label="Vision Quest on a phone, screen recording"></video><i class="it-cs-pending" aria-hidden="true">clip pending</i></div></div>
           <figcaption class="it-cs-mono"><span>On a phone</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
@@ -255,15 +257,15 @@
           <div class="it-cs-px it-cs-clip"><img src="/work/visionquest/motion-feel.webp" alt="Vision Quest: feel" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-feel.mp4" aria-label="Vision Quest: feel, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Feel</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:2;--s:10">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:6">
           <div class="it-cs-px it-cs-clip"><img src="/work/visionquest/motion-intense.webp" alt="Vision Quest: intense" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-intense.mp4" aria-label="Vision Quest: intense, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Intense</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:7;--s:6;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/visionquest/motion-balance.webp" alt="Vision Quest: balance" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-balance.mp4" aria-label="Vision Quest: balance, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Balance</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:4;--s:6">
           <div class="it-cs-px it-cs-clip"><img src="/work/visionquest/motion-register.webp" alt="Vision Quest: register · countdown and past events" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/visionquest/motion-register.mp4" aria-label="Vision Quest: register · countdown and past events, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Register · countdown and past events</span></figcaption>
         </figure>
@@ -279,14 +281,20 @@
       </blockquote>
     </section>
 
-    <!-- =============== NEXT / CTA =============== -->
+    <!-- =============== CTA + NEXT =============== -->
     <section class="it-cs-section it-cs-next">
-      <div class="it-cs-next-row" data-cs-reveal>
+      <div class="it-cs-cta" data-cs-reveal>
+        <p class="it-eyebrow">Your turn</p>
+        <h2 class="it-h2 it-cs-cta-title">Want one that <em>moves like this?</em></h2>
+        <p class="it-cs-cta-line">Design, motion and build, from the first call to launch.</p>
+        <a class="it-btn it-btn-mint it-btn-big it-cs-cta-btn" href="/book/">Book a call</a>
+      </div>
+      <div class="it-cs-next-row">
         <a class="it-cs-next-link" href="/work/omegagti.html">
           <span class="it-eyebrow">Next up</span>
           <span class="it-cs-next-title">Omega GTI →</span>
         </a>
-        <a class="it-btn it-btn-mint" href="/book/">Book a call</a>
+        <a class="it-cs-all it-cs-mono" href="/#work">All work</a>
       </div>
       <p class="it-cs-footnote">Imagine Tofu · San Leandro, CA → everywhere · <a href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a></p>
     </section>

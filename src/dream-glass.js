@@ -5,6 +5,7 @@
    path keeps the .it-dream-duo fallback in index.html. */
 
 import { media } from "./media.js";
+import { LITE } from "./perf.js";
 
 const q = (s, c = document) => c.querySelector(s);
 
@@ -30,6 +31,26 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   // on approach (desktop only), and decoded only while their transition is near (~3.7MB each decoded).
   // Frames: public/dream/glass/seq/{ta,tb}/001-061.webp (every 2nd frame of the 1280x720 clip).
   const SEQ_N = 61;
+  const WINDOWED = navigator.userAgent.includes("Firefox/");
+  // Decoding happens in a worker. Chrome already decodes createImageBitmap(blob) off the main thread, but
+  // Firefox does it on the main thread: holding a transition decoded 61 1280x720 WebPs in one burst there and
+  // dropped ~10 frames each time (measured at p 0.15-0.21 and 0.61-0.67). The worker hands back transferable
+  // bitmaps, so the main thread never decodes. Falls back to main-thread decoding if a worker can't start.
+  const decodeBitmap = (() => {
+    let w = null; const pend = new Map(); let n = 0;
+    try {
+      const src = "self.onmessage=async(e)=>{const{id,blob}=e.data;try{const bm=await createImageBitmap(blob);self.postMessage({id,bm},[bm]);}catch(_){self.postMessage({id,bm:null});}};";
+      w = new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })));
+      w.onmessage = (e) => { const p = pend.get(e.data.id); if (!p) return; pend.delete(e.data.id); e.data.bm ? p.res(e.data.bm) : p.rej(); };
+      w.onerror = () => {   // e.g. a CSP that forbids blob: workers: finish what is queued on the main thread
+        w = null; pend.forEach((p) => createImageBitmap(p.blob).then(p.res, p.rej)); pend.clear();
+      };
+    } catch (e) { w = null; }
+    return (blob) => {
+      if (!w) return createImageBitmap(blob);
+      return new Promise((res, rej) => { const id = ++n; pend.set(id, { res, rej, blob }); w.postMessage({ id, blob }); });
+    };
+  })();
   function makeSeq(video, dir) {
     const c = document.createElement("canvas");
     c.className = video.className; c.setAttribute("aria-hidden", "true"); c.id = "it-dg-seq-" + dir;
@@ -40,12 +61,26 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     let fetching = false, held = false, last = -1;
     const url = (i) => media("/dream/glass/seq/" + dir + "/" + String(i + 1).padStart(3, "0") + ".webp");
     const ok = (j) => j >= 0 && j < SEQ_N && bm[j] instanceof ImageBitmap;
+    // Firefox: never hold all 61 decoded frames (~225MB) at once. Allocating them in one burst stalled it for
+    // ~10 frames at each transition (p 0.15-0.21 and 0.61-0.67), worker or not. There it keeps a sliding
+    // window around the current frame (plus both hand-off frames), nearest first, two decodes in flight.
+    // Chrome keeps the original hold-everything behavior.
+    let cur = 0, inflight = 0;
+    const WIN = 8;
     function decode(i) {
       if (bm[i] || !blobs[i]) return;
-      bm[i] = "pending";
-      createImageBitmap(blobs[i]).then((b) => {
+      bm[i] = "pending"; inflight++;
+      decodeBitmap(blobs[i]).then((b) => {
         if (held) { bm[i] = b; last = -1; } else { b.close(); bm[i] = null; }
-      }, () => { bm[i] = null; });
+      }, () => { bm[i] = null; }).then(() => { inflight--; pump(); });
+    }
+    const keep = (j) => j === 0 || j === SEQ_N - 1 || Math.abs(j - cur) <= WIN + 3;
+    function pump() {
+      if (!held || !WINDOWED) return;
+      for (let j = 0; j < SEQ_N; j++) if (bm[j] instanceof ImageBitmap && !keep(j)) { bm[j].close(); bm[j] = null; }
+      const want = [0, SEQ_N - 1];
+      for (let d = 0; d <= WIN; d++) want.push(cur + d, cur - d);
+      for (const j of want) { if (inflight >= 2) break; if (j >= 0 && j < SEQ_N && !bm[j] && blobs[j]) decode(j); }
     }
     function load() {
       if (fetching) return; fetching = true;
@@ -55,17 +90,19 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       const worker = () => {
         if (k >= order.length) return;
         const i = order[k++];
-        fetch(url(i)).then((r) => r.blob()).then((b) => { blobs[i] = b; if (held) decode(i); }, () => {}).then(worker);
+        fetch(url(i)).then((r) => r.blob()).then((b) => { blobs[i] = b; if (held) WINDOWED ? pump() : decode(i); }, () => {}).then(worker);
       };
       for (let w = 0; w < 4; w++) worker();
     }
-    function hold(on) {
+    function hold(on, at = 0) {
       if (on === held) return; held = on;
-      if (on) { for (let i = 0; i < SEQ_N; i++) decode(i); }
+      if (on && WINDOWED) { cur = Math.round(Math.max(0, Math.min(1, at)) * (SEQ_N - 1)); pump(); }   // entering from below starts at the end
+      else if (on) { for (let i = 0; i < SEQ_N; i++) decode(i); }
       else { for (let i = 0; i < SEQ_N; i++) { if (bm[i] instanceof ImageBitmap) bm[i].close(); bm[i] = null; } last = -1; }
     }
     function show(f) {
       const x = Math.max(0, Math.min(1, f)) * (SEQ_N - 1);
+      if (WINDOWED && Math.round(x) !== cur) { cur = Math.round(x); pump(); }
       if (Math.abs(x - last) < 0.004) return;
       const i = Math.floor(x);
       let a = i; while (a >= 0 && !ok(a)) a--;
@@ -136,7 +173,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
 
   let W = 0, H = 0, dpr = 1;
   function resize() {
-    dpr = Math.min(devicePixelRatio || 1, 1.5);   // full-stage canvas of soft dust: 1.5x is indistinguishable from 2x at ~half the pixels
+    dpr = Math.min(devicePixelRatio || 1, LITE ? 1 : 1.5);   // full-stage canvas of soft dust: 1.5x is indistinguishable from 2x at ~half the pixels
     const r = stage.getBoundingClientRect(); W = r.width; H = r.height;
     canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + "px"; canvas.style.height = H + "px";
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -209,22 +246,27 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     perk = Math.max(0, perk - dt * 2.2); const e = Math.sin(perk * Math.PI);
     return { dy: -e * 0.035 * H, sx: 1 - e * 0.06, sy: 1 + e * 0.08 };
   }
+  // per-frame transforms are written straight to the style: gsap.set() builds a tween object per call,
+  // and this is ~4 calls a frame for as long as the scene is on screen. (None of these elements carry a CSS
+  // transform or another GSAP transform tween, so there is nothing to compose with.)
+  const lastTf = new WeakMap();
+  const setTf = (el, v) => { if (lastTf.get(el) === v) return; lastTf.set(el, v); el.style.transform = v; };
   let lastPos = null, lastPose = null;
   function place(z, dt) {
     const t = (performance.now() - t0) / 1000, size = boxes().tofu, w = wander(t), pk = perkPulse(t, dt), jg = jiggle(dt);
     spring(dt, z.x * W + w.dx, z.y * H + w.dy + pk.dy, z.s);
     const lean = gsap.utils.clamp(-14, 14, -sp.vx * LEAN), sq = gsap.utils.clamp(-0.12, 0.12, sp.vy * SQUASH);
-    gsap.set(tofu, { x: sp.x - size / 2, y: sp.y - size / 2, scale: sp.s * w.breath, rotation: z.r + w.rot + lean + lookLean + jg.rot });   // origin is the CSS default (centre); passing it per frame made GSAP re-measure
+    setTf(tofu, `translate(${(sp.x - size / 2).toFixed(2)}px,${(sp.y - size / 2).toFixed(2)}px) rotate(${(z.r + w.rot + lean + lookLean + jg.rot).toFixed(3)}deg) scale(${(sp.s * w.breath).toFixed(4)})`);   // origin is the CSS default (centre)
     mirrorT = lerp(mirrorT, mirror, 0.16);
     const turning = 1 - Math.abs(mirrorT);
-    gsap.set(body, { scaleX: mirrorT * (1 - sq) * pk.sx * jg.sx, scaleY: (1 + sq) * pk.sy * (1 + turning * 0.10) * jg.sy });
+    setTf(body, `scale(${(mirrorT * (1 - sq) * pk.sx * jg.sx).toFixed(4)},${((1 + sq) * pk.sy * (1 + turning * 0.10) * jg.sy).toFixed(4)})`);
     jigEyes = jg.eyes;
     lastPose = { cx: sp.x, cy: sp.y, box: size, sc: sp.s * w.breath, rot: (z.r + w.rot + lean + lookLean + jg.rot) * Math.PI / 180 };
     return (lastPos = { cx: sp.x, cy: sp.y, size: size * sp.s });
   }
 
   /* ======================= STARDUST WAKE ======================= */
-  const motes = [], MAX = 90;
+  const motes = [], MAX = LITE ? 36 : 90;
   const palette = [{ c: "158,217,191", w: 0.5 }, { c: "241,234,217", w: 0.4 }, { c: "243,181,156", w: 0.1 }];
   const pick = () => { let r = Math.random(); for (const p of palette) { if ((r -= p.w) <= 0) return p.c; } return palette[0].c; };
   function spawn(cx, cy, size, dx, dy, n) {
@@ -264,7 +306,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     cx: 0.50, cy: 0.55, rx: 0.78, ry: 0.25,   // tofu-box units (1 = the creature's box width)
     tilt: -13, sway: 3.5,                      // degrees
     in: [0.84, 0.93], spark: [0.90, 0.95],     // pin fractions: draw-on, comet head
-    N: 160,                                    // segments around the loop
+    N: LITE ? 84 : 160,                        // segments around the loop (phones: half, the ribbon still reads as a curve)
     flow: [1.4, 0.9], hueDrift: 0.6,           // band speeds (rad/s), colour drift speed
     ray: 0.52, lap: Math.PI / 3, glow: 0.68,   // glow = overall brightness of halo, rays and comet bloom (1 = original)
                   // max curtain height (box units), comet speed when free-running (rad/s; one lap per 6s, the video's tempo)
@@ -310,7 +352,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       return;
     }
     ringOff = false;
-    const d = Math.min(devicePixelRatio || 1, 2), px = Math.round(boxes().tofu * 2.2 * d);
+    const d = Math.min(devicePixelRatio || 1, LITE ? 1.25 : 2), px = Math.round(boxes().tofu * 2.2 * d);
     if (px !== ringPx) { ringPx = px; ring.back.width = ring.back.height = ring.front.width = ring.front.height = px; }
     const S = ringPx, U = S / 2.2;
     const ox = S / 2 + (RG.cx - 0.5) * U, oy = S / 2 + (RG.cy - 0.5) * U, rx = RG.rx * U, ry = RG.ry * U;
@@ -393,9 +435,10 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       return;
     }
     resoOff = false;
-    if (reso.width !== Math.round(W) || reso.height !== Math.round(H)) {     // 1x on purpose: soft glow only, a quarter of the pixels on retina
-      reso.width = Math.round(W); reso.height = Math.round(H); reso.style.width = W + "px"; reso.style.height = H + "px";
-      resoCtx.setTransform(1, 0, 0, 1, 0, 0);
+    const rk = LITE ? 0.5 : 1;   // soft glow only: 1x on desktop, half-res on phones (a quarter of the pixels to clear, fill and blend)
+    if (reso.width !== Math.round(W * rk) || reso.height !== Math.round(H * rk)) {
+      reso.width = Math.round(W * rk); reso.height = Math.round(H * rk); reso.style.width = W + "px"; reso.style.height = H + "px";
+      resoCtx.setTransform(rk, 0, 0, rk, 0, 0);   // everything below stays in stage px
     }
     // comet head in stage px: box-unit offset, scaled and rotated with the creature
     const ex = h.bx * pose.box * pose.sc, ey = h.by * pose.box * pose.sc, c = Math.cos(pose.rot), s = Math.sin(pose.rot);
@@ -544,7 +587,8 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     if (gz.x < -FLIP_AT) mirror = 1;
     const bw = boxes().body, dx = gz.x * GAZE_PX * bw * mirror, dy = gz.y * GAZE_PX * bw * 0.8;
     const widen = 1 + Math.max(0, -gz.y) * 0.10 + jigEyes * 0.22;
-    gsap.set(eyeL, { x: dx, y: dy, scaleY: widen }); gsap.set(eyeR, { x: dx, y: dy, scaleY: widen });
+    const et = `translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) scaleY(${widen.toFixed(3)})`;
+    setTf(eyeL, et); setTf(eyeR, et);
     const joyOn = performance.now() < joyUntil;
     eyes.style.visibility = joyOn ? "hidden" : "";
     peaceTick(p, performance.now());
@@ -615,7 +659,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   }
   // phones: the incoming station dissolves in OVER the outgoing one (which holds at full opacity
   // underneath until the dissolve completes, so the frame never dips toward the ground color)
-  function conductPhone(p, { s1, tA, tB, s3, CF }) {
+  function conductPhone(p, { s1, s2, tA, tB, s3, CF }) {
     const xA = smooth(ramp(p, tA[0] - CF, tA[1] + CF)), xB = smooth(ramp(p, tB[0] - CF, tB[1] + CF));
     const vS1 = xA > 0.999 ? 0 : 1, vS2 = xB > 0.999 ? 0 : xA, vS3 = xB;
     put(vids.tA, { opacity: 0 }); put(vids.tB, { opacity: 0 });
@@ -623,6 +667,9 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     put(vids.s2, { opacity: vS2, scale: 1.08 - 0.08 * xA + 0.03 * xB, yPercent: 3 * xB });   // arrives from a step back (push-in)
     put(vids.s3, { opacity: vS3, scale: 1.04 - 0.04 * xB, yPercent: -5 * (1 - xB) });     // drops in from above (rise into the canopy)
     want(vids.s1, vS1 > 0.01); want(vids.s2, vS2 > 0.01); want(vids.s3, vS3 > 0.01);
+    // fetch + decode a first frame of each loop a scene ahead (as on desktop). Left to want(), the file is
+    // requested and the decoder spun up at the very moment the dissolve starts: a stall on the main thread
+    prime(vids.s2, p > s1[0] + (s1[1] - s1[0]) * 0.5); prime(vids.s3, p > s2[0]);
     if (edgeTop) put(edgeTop, { opacity: 1 - smooth(ramp(p, s1[1] - CF, tA[1])) });
     if (edgeBottom) put(edgeBottom, { opacity: smooth(ramp(p, tB[0], s3[0] + CF)) });
   }
@@ -645,7 +692,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     // fetch + decode each loop a scene ahead, so it is ready (not spinning up) when it fades in
     prime(vids.s2, p > s1[0] + (s1[1] - s1[0]) * 0.5); prime(vids.s3, p > s2[0]);
     // decoded frames live only around their own transition (never both at once)
-    seqA.hold(p > tA[0] - 0.12 && p < tA[1] + 0.12); seqB.hold(p > tB[0] - 0.14 && p < tB[1] + 0.12);
+    seqA.hold(p > tA[0] - 0.12 && p < tA[1] + 0.12, ramp(p, tA[0], tA[1])); seqB.hold(p > tB[0] - 0.14 && p < tB[1] + 0.12, ramp(p, tB[0], tB[1]));
     if (oTA > 0.001) seqA.show(ramp(p, tA[0], tA[1]));
     if (oTB > 0.001) seqB.show(ramp(p, tB[0], tB[1]));
   }
@@ -679,16 +726,20 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   /* ======================= FRAME LOOP ======================= */
   // only run while the scene is near the viewport: loops pause, the ticker work stops
   let active = false, prevPos = null, last = performance.now();
-  // explicit length (pre-roll + pin + tail) because "bottom" of a pinned trigger moves with the pin
-  ScrollTrigger.create({ trigger: scene, start: "top 120%", end: () => "+=" + Math.round(innerHeight * (1.2 + 5.4 + 0.4)), invalidateOnRefresh: true,
+  // explicit length (pre-roll + pin + tail) because "bottom" of a pinned trigger moves with the pin.
+  // The tail is the stage's own height: the scene stays alive until its last pixel has scrolled off.
+  // (It used to stop 0.4 screens after the pin let go, with most of the canopy still on screen: the
+  // creature, ring and station-3 loop froze mid-exit.)
+  ScrollTrigger.create({ trigger: scene, start: "top 120%", end: () => "+=" + Math.round(innerHeight * (1.2 + 5.4) + stage.getBoundingClientRect().height + 40), invalidateOnRefresh: true,
     onToggle(s) { active = s.isActive;
       if (active) { setLoopSources(mobile); warm(); } else { want(vids.s1, false); want(vids.s2, false); want(vids.s3, false); } } });
   // the transitions are preload="none" (weight): nothing fetches until the scene is near, then we
   // load them ourselves and seek to the first frame so a decoded frame exists before the hand-off
   const primed = {};
   function prime(v, on) {
-    if (!on || !v || primed[v.id] || mobile) return; primed[v.id] = true;
+    if (!on || !v || primed[v.id]) return; primed[v.id] = true;
     if (v.readyState >= 2) return;
+    delete v.dataset.dgReload;   // phones: this load() IS the source switch; want() must not restart it at play time
     v.addEventListener("loadedmetadata", () => { try { v.currentTime = 0.04; } catch (e) {} }, { once: true });   // decode a first frame
     v.preload = "auto"; v.load();
   }
@@ -698,18 +749,22 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     seqA.load(); setTimeout(() => seqB.load(), 1500);   // the push-in's frames first
   }
 
+  let heavyDt = 0, heavyN = 0;
   gsap.ticker.add(() => {
     const now = performance.now(), dt = Math.min((now - last) / 1000, 0.05); last = now;
     if (!active) return;
     conduct(progress);
     const pos = place(sample(progress), dt);
     lookAt(progress, (now - t0) / 1000, pos);
-    drawRing(progress, (now - t0) / 1000);
-    drawReso((now - t0) / 1000);
+    // phones: the three canvases (ring, resonance light, stardust) redraw every other frame (half the display rate; on a
+    // 60Hz screen, 60fps on 120Hz). They are soft glows; the creature + scene transforms above stay full rate.
+    heavyDt += dt; heavyN++;
+    const heavy = !LITE || (heavyN & 1) === 0;
+    if (heavy) { drawRing(progress, (now - t0) / 1000); drawReso((now - t0) / 1000); }
     let dx = 0, dy = 0; if (prevPos) { dx = (pos.cx - prevPos.cx) / dt; dy = (pos.cy - prevPos.cy) / dt; } prevPos = pos;
     const speed = Math.hypot(dx, dy), k = Math.min(speed / 1400, 1), amt = 7.5 * k, ux = speed > 1 ? dx / speed : 1, uy = speed > 1 ? dy / speed : 0;
-    qx1(-ux * amt * mirror); qy1(-uy * amt); qx2(ux * amt * mirror); qy2(uy * amt); qa1(0.55 * k); qa2(0.5 * k);
+    if (!LITE) { qx1(-ux * amt * mirror); qy1(-uy * amt); qx2(ux * amt * mirror); qy2(uy * amt); qa1(0.55 * k); qa2(0.5 * k); }   // ghosts are hidden on phones (lite.css)
     if (speed > 60) spawn(pos.cx, pos.cy, pos.size, ux * speed, uy * speed, Math.round(1 + 4 * k));
-    drawMotes(dt);
+    if (heavy) { drawMotes(heavyDt); heavyDt = 0; }
   });
 }

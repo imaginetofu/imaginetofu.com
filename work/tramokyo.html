@@ -105,9 +105,11 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..700&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
 
   <script>document.documentElement.classList.add('js');
+    if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
@@ -190,24 +192,27 @@
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">Where it started</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--num" aria-hidden="true">03</div>
               <h3 class="it-cs-pillar-title">The third site for a yearly birthday.</h3>
-              <p class="it-cs-pillar-body">Tramokyo came back after a year off, meant to be fun and intentional. The brand ran from the site to stickers, schedules and matchbox tickets.</p>
+              <p class="it-cs-pillar-body">Back after a year off, with a brand that ran to stickers and matchbox tickets.</p>
             </div>
           </article>
-          <article class="it-cs-pillar" style="--i:1">
+          <article class="it-cs-pillar is-poster" style="--i:1">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What was in the way</p>
               <h3 class="it-cs-pillar-title">Could a mockup survive WordPress?</h3>
-              <p class="it-cs-pillar-body">The last site was built in Elementor. This time the challenge was taking an HTML mockup into Bricks without losing its structure, motion or style.</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--num it-cs-pillar-art--mark" aria-hidden="true">?</div>
+              <p class="it-cs-pillar-body">An HTML mockup into Bricks, with nothing lost on the way.</p>
             </div>
           </article>
           <article class="it-cs-pillar" style="--i:2">
             <div class="it-cs-pillar-front" aria-hidden="true"><span class="it-cs-pillar-slice"></span></div>
             <div class="it-cs-pillar-back">
               <p class="it-cs-pillar-label it-cs-mono">What we pressed</p>
+              <div class="it-cs-pillar-art it-cs-pillar-art--clip" data-src="/work/tramokyo/tile"><video muted loop playsinline preload="none" aria-label="The Tramokyo Joshua tree and orbiting sun, looping"></video></div>
               <h3 class="it-cs-pillar-title">Petals, kintsugi and a swaying tree.</h3>
-              <p class="it-cs-pillar-body">A custom CSS framework and animation scripts in Bricks: falling sakura, a smiling sun with orbiting worlds, a slow Joshua tree, gold kintsugi cracks, and a program kept current by automation.</p>
+              <p class="it-cs-pillar-body">Custom CSS and scripts in Bricks, plus a program kept current by automation.</p>
             </div>
           </article>
         </div>
@@ -222,46 +227,39 @@
       <div class="it-cs-gallery-head it-cs-head" data-cs-reveal>
         <p class="it-eyebrow">The work</p>
         <h2 class="it-h2">The whole site, <em>in motion.</em></h2>
-        <p class="it-cs-note">Recorded on the live site. The first frame scrolls the homepage on its own; the rest play as you reach them.</p>
+        <p class="it-cs-note">Recorded on the live site. Each clip plays as you reach it.</p>
       </div>
       <div class="it-cs-works">
-        <figure class="it-cs-work it-cs-work--auto" style="--c:1;--s:8">
+        <figure class="it-cs-work it-cs-work--hero" style="--c:1;--s:8">
           <div class="it-cs-browser">
             <div class="it-cs-browser-bar" aria-hidden="true"><span class="it-cs-browser-dots"><i></i><i></i><i></i></span><span class="it-cs-browser-url it-cs-mono">tramokyo.com</span></div>
-            <div class="it-cs-auto">
-              <div class="it-cs-px it-cs-auto-view"><img src="/work/tramokyo/full-desktop.webp" alt="The full Tramokyo homepage, scrolling top to bottom" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-              <span class="it-cs-auto-bar" aria-hidden="true"><i></i></span>
-            </div>
+            <div class="it-cs-px it-cs-clip" style="aspect-ratio:16/10;border-radius:0"><img src="/work/tramokyo/motion-hero.webp" alt="Tramokyo: the homepage hero in motion" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-hero.mp4" aria-label="Tramokyo: the homepage hero, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           </div>
-          <figcaption class="it-cs-mono"><span>Full homepage · scrolls on its own</span></figcaption>
+          <figcaption class="it-cs-mono"><span>Hero · the intro</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--phone" style="--c:10;--s:3;--o:clamp(2rem,9vw,9rem)">
-          <div class="it-cs-phone"><div class="it-cs-px"><img src="/work/tramokyo/hero-mobile.webp" alt="Tramokyo on a phone" width="780" height="1688" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div></div>
+          <div class="it-cs-phone"><div class="it-cs-px it-cs-clip"><img src="/work/tramokyo/motion-mobile.webp" alt="Tramokyo on a phone" width="780" height="1688" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-mobile.mp4" aria-label="Tramokyo on a phone, screen recording"></video><i class="it-cs-pending" aria-hidden="true">clip pending</i></div></div>
           <figcaption class="it-cs-mono"><span>On a phone</span></figcaption>
         </figure>
         <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
-          <div class="it-cs-px it-cs-clip"><img src="/work/tramokyo/motion-hero.webp" alt="Tramokyo: hero · the intro" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-hero.mp4" aria-label="Tramokyo: hero · the intro, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
-          <figcaption class="it-cs-mono"><span>Hero · the intro</span></figcaption>
-        </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/tramokyo/motion-ikigai.webp" alt="Tramokyo: ikigai · a reason" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-ikigai.mp4" aria-label="Tramokyo: ikigai · a reason, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Ikigai · a reason</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:5;--o:clamp(3rem,10vw,10rem)">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:8;--s:5;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px it-cs-clip"><img src="/work/tramokyo/motion-kuchisabishii.webp" alt="Tramokyo: kuchisabishii · a hunger" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-kuchisabishii.mp4" aria-label="Tramokyo: kuchisabishii · a hunger, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Kuchisabishii · a hunger</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:6;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:6">
           <div class="it-cs-px it-cs-clip"><img src="/work/tramokyo/motion-kintsugi.webp" alt="Tramokyo: kintsugi · a mend" width="1440" height="900" loading="lazy" decoding="async" /><video muted loop playsinline preload="none" data-clip="/work/tramokyo/motion-kintsugi.mp4" aria-label="Tramokyo: kintsugi · a mend, screen recording"></video><span class="it-cs-clip-tag" aria-hidden="true">In motion</span><i class="it-cs-pending" aria-hidden="true">clip pending</i></div>
           <figcaption class="it-cs-mono"><span>Kintsugi · a mend</span></figcaption>
         </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:2;--s:10">
-          <div class="it-cs-px"><img src="/work/tramokyo/form.webp" alt="Tramokyo: registration form" width="1440" height="900" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
-          <figcaption class="it-cs-mono"><span>Registration form</span></figcaption>
-        </figure>
-        <figure class="it-cs-work it-cs-work--screen" style="--c:1;--s:7">
+        <figure class="it-cs-work it-cs-work--screen" style="--c:7;--s:6;--o:clamp(3rem,10vw,10rem)">
           <div class="it-cs-px"><img src="/work/tramokyo/schedule.webp" alt="Tramokyo: the program · schedule page" width="1440" height="900" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
           <figcaption class="it-cs-mono"><span>The program · schedule page</span></figcaption>
+        </figure>
+        <figure class="it-cs-work it-cs-work--screen" style="--c:5;--s:4">
+          <div class="it-cs-px"><img src="/work/tramokyo/form.webp" alt="Tramokyo: registration form" width="1440" height="900" loading="lazy" decoding="async" /><i class="it-cs-pending" aria-hidden="true">capture pending</i></div>
+          <figcaption class="it-cs-mono"><span>Registration form</span></figcaption>
         </figure>
       </div>
     </section>
@@ -275,14 +273,20 @@
       </blockquote>
     </section>
 
-    <!-- =============== NEXT / CTA =============== -->
+    <!-- =============== CTA + NEXT =============== -->
     <section class="it-cs-section it-cs-next">
-      <div class="it-cs-next-row" data-cs-reveal>
+      <div class="it-cs-cta" data-cs-reveal>
+        <p class="it-eyebrow">Your turn</p>
+        <h2 class="it-h2 it-cs-cta-title">Want one that <em>moves like this?</em></h2>
+        <p class="it-cs-cta-line">Design, motion and build, from the first call to launch.</p>
+        <a class="it-btn it-btn-mint it-btn-big it-cs-cta-btn" href="/book/">Book a call</a>
+      </div>
+      <div class="it-cs-next-row">
         <a class="it-cs-next-link" href="/work/lioncard.html">
           <span class="it-eyebrow">Next up</span>
           <span class="it-cs-next-title">Lion Card →</span>
         </a>
-        <a class="it-btn it-btn-mint" href="/book/">Book a call</a>
+        <a class="it-cs-all it-cs-mono" href="/#work">All work</a>
       </div>
       <p class="it-cs-footnote">Imagine Tofu · San Leandro, CA → everywhere · <a href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a></p>
     </section>

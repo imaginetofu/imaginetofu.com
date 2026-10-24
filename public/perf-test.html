@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Scroll test</title>
+<style>
+  html { background: #0f1814; color: #f1ead9; font: 17px/1.6 system-ui, sans-serif; }
+  body { margin: 0; padding: 24px 18px 60vh; }
+  h1 { font-size: 1.4rem; margin: 0 0 1rem; }
+  p { margin: 0 0 1.1rem; color: color-mix(in srgb, #f1ead9 80%, transparent); }
+  .box { height: 220px; margin: 0 0 1.1rem; border-radius: 14px; background: linear-gradient(135deg, #9ed9bf, #f3b59c); }
+  #hud { position: fixed; left: 6px; bottom: 6px; font: 11px/1.35 ui-monospace, monospace; color: #9ed9bf; background: rgba(0,0,0,.72); padding: 5px 7px; border-radius: 6px; white-space: pre; pointer-events: none; }
+</style>
+</head>
+<body>
+<h1>Plain scroll test</h1>
+<p>Control page for the Imagine Tofu site: no effects, no video, no scripts beyond the readout. Scroll it the way you scroll the site and compare the fps in the corner.</p>
+<div id="c"></div>
+<div id="hud">-</div>
+<script>
+  const c = document.getElementById("c");
+  for (let i = 0; i < 40; i++) {
+    const p = document.createElement("p");
+    p.textContent = "Section " + (i + 1) + ". Good ideas start soft. We steep them in wonder until they are ready to take shape, then press them, gently but firmly, into something you can build on.";
+    c.appendChild(p);
+    if (i % 3 === 0) { const b = document.createElement("div"); b.className = "box"; c.appendChild(b); }
+  }
+  const hud = document.getElementById("hud");
+  let last = performance.now(), frames = 0, worst = 0, slow = 0, win = last;
+  (function f(t) {
+    const d = t - last; last = t; frames++; worst = Math.max(worst, d); if (d > 33) slow++;
+    if (t - win >= 1000) { hud.textContent = frames + "fps  worst " + Math.round(worst) + "ms  slow " + slow; frames = 0; worst = 0; slow = 0; win = t; }
+    requestAnimationFrame(f);
+  })(last);
+</script>
+</body>
+</html>

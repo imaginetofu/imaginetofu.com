@@ -47,17 +47,19 @@ const WARM = [
 // ascii density ramp (one glyph per palette step; index 0 = darkest drawn)
 const GLYPHS = ["·", ":", "+", "*", "#", "@"];
 
+import { LITE } from "./perf.js";
+
 export function initTileArt({ reduced = false } = {}) {
   const tiles = [...document.querySelectorAll(".it-tile")];
   if (!tiles.length) return;
-  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const dpr = Math.min(devicePixelRatio || 1, LITE ? 1.5 : 2);   // phones: 1.5x, the cells are 5-9px blocks
   const renders = [];
 
   tiles.forEach((tile) => {
     const scene = tile.querySelector(".it-tile-scene");
     const img = scene?.querySelector("img");
     if (!scene || !img) return;
-    const video = scene.querySelector("video");
+    const video = LITE ? null : scene.querySelector("video");   // phones animate from the still: no loop to fetch or decode
     const mode = tile.dataset.art || tile.closest("[data-art]")?.dataset.art || "ascii";
     const canvas = document.createElement("canvas");
     canvas.className = "it-tile-art";
@@ -106,8 +108,10 @@ export function initTileArt({ reduced = false } = {}) {
     else img.addEventListener("load", onReady, { once: true });
   });
 
+  // width changes only: phone URL-bar collapses fire resize with the same width, and re-laying out three canvases + atlases on each is a hitch
+  let lastW = innerWidth;
   const relayout = () => renders.forEach((R) => R.ready && (layout(R, dpr), draw(R, performance.now(), true)));
-  addEventListener("resize", relayout, { passive: true });
+  addEventListener("resize", () => { if (innerWidth !== lastW) { lastW = innerWidth; relayout(); } }, { passive: true });
   document.fonts?.ready?.then(relayout); // glyph atlas needs the real Space Mono
 
   if (reduced) return; // one still frame each, drawn above
@@ -137,6 +141,7 @@ export function initTileArt({ reduced = false } = {}) {
         const R = renders.find((r) => r.tile === e.target);
         if (!R) return;
         R.visible = e.isIntersecting;
+        if (R.visible) kick?.();
         if (R.video) {
           if (R.visible) R.video.play?.().catch(() => {});
           else R.video.pause?.();
@@ -147,7 +152,29 @@ export function initTileArt({ reduced = false } = {}) {
   renders.forEach((R) => io.observe(R.tile));
 
   const FRAME = 1000 / 20; // 20 fps is plenty for a 9px grid
+  // phones: the mosaic is a few thousand cell draws + a pixel readback, on the main thread. So only the
+  // window nearest the middle of the screen animates (12 fps), and only while the scroll is at rest —
+  // a frozen frame during a flick is invisible, a dropped scroll frame is not.
+  let lastScroll = 0, running = true;
+  // phones: the loop itself sleeps while no window is near the screen; the observer above wakes it
+  var kick = () => { if (!running) { running = true; requestAnimationFrame(tick); } };
+  if (LITE) addEventListener("scroll", () => { lastScroll = performance.now(); }, { passive: true });
   const tick = (now) => {
+    if (LITE) {
+      if (now - lastScroll > 160) {
+        let best = null, bd = Infinity;
+        renders.forEach((R) => {
+          if (!R.ready || !R.visible) return;
+          const b = R.tile.getBoundingClientRect();
+          const d = Math.abs(b.top + b.height / 2 - innerHeight / 2);
+          if (d < bd && b.bottom > 0 && b.top < innerHeight) { bd = d; best = R; }
+        });
+        if (best && now - best.lastFrame >= 1000 / 12) { best.lastFrame = now; draw(best, now, false); }
+      }
+      if (!renders.some((R) => R.visible)) { running = false; return; }
+      requestAnimationFrame(tick);
+      return;
+    }
     renders.forEach((R) => {
       if (!R.ready || !R.visible) return;
       if (now - R.lastFrame < (R.fx ? 1000 / 30 : FRAME)) return;

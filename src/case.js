@@ -14,14 +14,17 @@
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/case.css";
+import "./styles/lite.css";
 
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
+import { TOUCH } from "./perf.js";
 import { initPageTransition } from "./page-transition.js";
 import { initCaseWorks } from "./case-works.js";
 
 gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true }); // URL-bar collapses must not re-measure every trigger
 
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fine = matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -33,7 +36,7 @@ initPageTransition({ gsap, reduced });
 /* ---------- smooth scroll ---------- */
 
 let lenis = null;
-if (motion) {
+if (motion && !TOUCH) {   // touch keeps the browser's own scroll: smoother, and no main-thread smoothing loop
   lenis = new Lenis({ duration: 1.15 });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((t) => lenis.raf(t * 1000));
@@ -113,10 +116,35 @@ document.querySelectorAll("[data-src]").forEach(attachLoop);
   const tiles = section ? [...section.querySelectorAll(".it-cs-pillar")] : [];
   const head = section?.querySelector(".it-cs-pillars-head");
   if (section && row && tiles.length === 3) {
+    // static tiles are plain text cards, so the row must not read as one image to screen readers
+    // (role="img" would hide the three cards' text); the live desktop flip puts it back
+    const imgRole = [row.getAttribute("role"), row.getAttribute("aria-label")];
+    const asText = () => { row.removeAttribute("role"); row.removeAttribute("aria-label"); };
+    asText();
     const mm = gsap.matchMedia();
     // the pinned flip needs room and a mouse-free scroll is fine, but not a phone
     mm.add("(min-width: 900px) and (prefers-reduced-motion: no-preference)", () => {
       section.classList.add("is-live");
+      // the backs anchor their text to the bottom, so a 2-line title next to a 3-line one (or a
+      // shorter body) leaves the headings at different heights. Give each row's titles and bodies
+      // the tallest one's height so every heading starts on the same line.
+      // tiles with their own visual (story tiles v2) size themselves on purpose, so only plain rows even up
+      const plain = tiles.every((t) => !t.querySelector(".it-cs-pillar-art") && !t.classList.contains("is-poster"));
+      const parts = (sel) => (plain ? tiles : []).map((t) => t.querySelector(sel)).filter(Boolean);
+      const evenUp = () => {
+        for (const group of [parts(".it-cs-pillar-title"), parts(".it-cs-pillar-body")]) {
+          group.forEach((el) => { el.style.minHeight = ""; });
+          const h = Math.max(...group.map((el) => el.getBoundingClientRect().height));
+          group.forEach((el) => { el.style.minHeight = h + "px"; });
+        }
+      };
+      evenUp();
+      document.fonts?.ready.then(evenUp);
+      let evenT;
+      const ro = "ResizeObserver" in window ? new ResizeObserver(() => { clearTimeout(evenT); evenT = setTimeout(evenUp, 80); }) : null;
+      ro?.observe(row);
+      if (imgRole[0]) row.setAttribute("role", imgRole[0]);
+      if (imgRole[1]) row.setAttribute("aria-label", imgRole[1]);
       const radius = () => parseFloat(getComputedStyle(row).getPropertyValue("--pr")) || 22;
       gsap.set(head, { y: 40, autoAlpha: 0 });
       const tl = gsap.timeline({
@@ -132,7 +160,7 @@ document.querySelectorAll("[data-src]").forEach(attachLoop);
         .fromTo(tiles, { "--pround": 0 }, { "--pround": 1, duration: 0.12, ease: "power2.out" }, 0.3)
         .to(tiles, { rotationY: 180, duration: 0.22, ease: "power2.inOut", stagger: 0.07 }, 0.56)
         .to({}, { duration: 0.08 }); // a beat of rest at the end
-      return () => { section.classList.remove("is-live"); gsap.set([head, ...tiles, row], { clearProps: "all" }); };
+      return () => { ro?.disconnect(); [...parts(".it-cs-pillar-title"), ...parts(".it-cs-pillar-body")].forEach((el) => { el.style.minHeight = ""; }); section.classList.remove("is-live"); asText(); gsap.set([head, ...tiles, row], { clearProps: "all" }); };
     });
   }
 }
