@@ -7,5 +7,15 @@
 /my-work/ /#work 301
 /website-maintenance /#services 301
 /website-maintenance/ /#services 301
+/services /#services 301
+/services/ /#services 301
+/hello-world/ / 301
+/sample-page/ / 301
+/sample-page-2/ / 301
 /project/* /#work 301
 /project-type/* /#work 301
+/project-tag/* /#work 301
+/faq/* /#services 301
+/faq-category/* /#services 301
+/category/* / 301
+/author/* / 301

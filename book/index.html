@@ -71,6 +71,10 @@
   <!-- Google Analytics 4: property "Imagine TOFU" (same web stream as the old WordPress site, so history continues) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1"></script>
   <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-SNMZB43GC1');</script>
+  <script>/* leads: "Book a call" and email clicks count as GA4 generate_lead (method = book_call | email) */
+  document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (!a) return; var h = a.getAttribute('href') || '';
+    var m = (h === '/book' || h.indexOf('/book/') === 0) ? 'book_call' : h.toLowerCase().indexOf('mailto:') === 0 ? 'email' : ''; if (!m) return;
+    var s = a.closest('section[id], header, footer, nav'); gtag('event', 'generate_lead', { method: m, link_url: h, placement: (s && (s.id || s.tagName.toLowerCase())) || 'page', page_path: location.pathname }); }, true);</script>
 </head>
 <body class="it-case-body it-bk-body">
   <a class="it-skip" href="#main">Skip to content</a>
