@@ -22,6 +22,7 @@ import Lenis from "lenis";
 import { TOUCH } from "./perf.js";
 import { initPageTransition } from "./page-transition.js";
 import { initCaseWorks } from "./case-works.js";
+import { initBuddy, initBuddyScrollTop } from "./mascot.js";
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true }); // URL-bar collapses must not re-measure every trigger
@@ -42,6 +43,11 @@ if (motion && !TOUCH) {   // touch keeps the browser's own scroll: smoother, and
   gsap.ticker.add((t) => lenis.raf(t * 1000));
   gsap.ticker.lagSmoothing(0);
 }
+
+/* ---------- corner buddy: back to top (Oct 24, desktop + phones) ---------- */
+
+initBuddy({ reduced });
+initBuddyScrollTop({ lenis, reduced });
 
 /* ---------- reveals: CSS transitions, IO-triggered ---------- */
 

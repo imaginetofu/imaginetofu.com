@@ -191,7 +191,7 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
 - Google Fonts load non-blocking (preload + onload swap, noscript fallback) on every page; request
   trimmed to what is rendered: Bricolage wght 400..700, Fraunces ITALIC only 400..700 (upright was never
   used), Hanken 400/500/600, Space Mono 400/700.
-- `?perf` shows an fps readout; `?x=blend,canvas,video,filter,anim,fixed` switches cost classes off.
+- The `?perf` / `?x=` on-device diagnostics and /perf-test.html were removed before launch (Oct 24).
 - Firefox desktop (Oct 23): holding a dream transition used to decode all 61 frames (~225MB) at once and
   stalled Firefox ~10 frames at p 0.15-0.21 / 0.61-0.67. In Firefox only (`WINDOWED`), makeSeq keeps a
   +-8 frame window around the scrub position plus both hand-off frames; Chrome keeps hold-everything.
@@ -202,10 +202,17 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
   `[data-split]`, the Hello statement, mobile work cards) are CSS transitions driven by `.is-in`
   (`.gk-rv/.gk-split/.gk-stmt/.gk-card` in lite.css), tile parallax is off, the cube's Hello fade is timed,
   the marquee keeps its CSS loop, hero motes draw at half rate, and the After Dark card loops that can't
-  run on the compositor (border drift, box-shadow pulse, --it-tr trail) hold still. `?x=nogecko` = A/B.
+  run on the compositor (border drift, box-shadow pulse, --it-tr trail) hold still.
 - Oct 24 (phones): case-page story pillars are plain text cards when static (fronts hidden, row loses
   role="img"; the desktop flip keeps its image fronts). Case frames fade in (`.is-fade`, 0.6s) instead of
   the pixel sweep. `.it-cs-hero` clips x (its aura made every case page 25px wider than the phone).
   Home: act 3 on phones is a scrubbed zig-zag (x +-24vw, a -18px hop per swing) from Hello's bottom to the
   first card at 70%, fading from 55% of the way (desktop keeps its fade). After Dark's frame loop now runs
   until the stage has fully left the screen (it froze 0.4 screens after the pin let go).
+- Oct 24 (later): case clips never played after the Cowork slow-connection pass (play() ran before the
+  queued src assignment, which resets to paused with preload=none); `load()` now re-plays live clips.
+  "Play clip" only shows on Save-Data / 2g-3g / downlink < 1.5 or after a stall, by design.
+  Phone cube acts 1+2 are three poses (rest / off / hello) tweened on ScrollTrigger enter/leaveBack, so
+  reverse scroll always lands (the old toggle tweens killed each other and parked the cube off-screen).
+  Act 3 is one continuous sine wave on a scrubbed 0..1 value (`cube._zz` keeps the hero sway ticker off x
+  while it settles). Work pages now carry the corner buddy (back to top), initBuddy in case.js.

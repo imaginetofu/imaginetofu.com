@@ -20,8 +20,8 @@ if (LITE) document.documentElement.classList.add("is-lite");
 // script changes during a scroll, and on that GPU a full tile redraw costs most of a frame. So in GECKO
 // mode every scroll-triggered reveal runs as a CSS transition (Firefox animates those on the compositor,
 // no redraw), scroll-scrubbed parallax is dropped, and loops that repaint every frame are paused.
-// Chrome / Safari / desktop are untouched. ?x=nogecko turns it off for an A/B on the device.
-export const GECKO = LITE && navigator.userAgent.includes("Firefox/") && !/[?&]x=[^&]*nogecko/.test(location.search);
+// Chrome / Safari / desktop are untouched.
+export const GECKO = LITE && navigator.userAgent.includes("Firefox/");
 if (GECKO) document.documentElement.classList.add("is-gecko");
 
 const SECTIONS = [
@@ -111,35 +111,3 @@ export function initPerf({ gsap }) {
   setInterval(() => { if (!document.hidden) sync(); }, 2500);
 }
 
-/* ---------- on-device diagnostics (only when the URL has ?perf or ?x=…) ----------
-   ?perf            a small readout: fps over the last second, worst frame, which section is on screen
-   ?x=blend,canvas  switch whole classes of cost off to find the one that hurts on a real phone:
-                    blend (mix-blend-mode) · canvas · video · filter · anim (CSS animations) · fixed (nav, buddy, cube, overlays hidden) · layers (no will-change)
-   e.g. imaginetofu.com/?perf&x=blend  — nothing here runs for normal visitors. */
-{
-  const qs = new URLSearchParams(location.search);
-  const xs = (qs.get("x") || "").split(",").filter(Boolean);
-  xs.forEach((x) => document.documentElement.classList.add("x-" + x.replace(/\W/g, "")));
-  if (qs.has("perf")) {
-    addEventListener("DOMContentLoaded", () => {
-      const hud = document.createElement("div");
-      hud.style.cssText = "position:fixed;left:6px;bottom:6px;z-index:99999;font:11px/1.35 ui-monospace,monospace;color:#9ed9bf;background:rgba(0,0,0,.72);padding:5px 7px;border-radius:6px;pointer-events:none;white-space:pre";
-      document.body.appendChild(hud);
-      let last = performance.now(), frames = 0, worst = 0, win = performance.now(), slow = 0, shown = 0;
-      const names = ["top", "intro", "work", "services", "dream", "studio", "contact"];
-      const sec = () => {
-        let cur = "hero";
-        for (const n of names.slice(1)) { const e = document.getElementById(n) || document.querySelector(".it-" + n); if (e && e.getBoundingClientRect().top < innerHeight * 0.5) cur = n; }
-        return cur;
-      };
-      (function f(t) {
-        const d = t - last; last = t; frames++; worst = Math.max(worst, d); if (d > 33) slow++;
-        if (t - win >= 1000) {
-          shown = frames; hud.textContent = `${shown}fps  worst ${Math.round(worst)}ms  slow ${slow}\n${sec()}  x=${xs.join(",") || "-"}`;
-          frames = 0; worst = 0; slow = 0; win = t;
-        }
-        requestAnimationFrame(f);
-      })(last);
-    });
-  }
-}

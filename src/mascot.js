@@ -106,8 +106,8 @@ export function initBuddy({ reduced }) {
     },
   });
 
-  /* dim behind the footer (z-swap, 150ms delay) */
-  ScrollTrigger.create({
+  /* dim behind the footer (z-swap, 150ms delay); case pages have no footer */
+  if (document.querySelector(".it-footer")) ScrollTrigger.create({
     trigger: ".it-footer",
     start: "top 88%",
     onEnter: () => gsap.to(buddy, { autoAlpha: 0.3, delay: 0.15, duration: 0.4 }),

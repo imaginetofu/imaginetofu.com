@@ -1617,6 +1617,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         if (!vid || !vid.currentSrc || vid.paused) return;
         if (!phoneMQ.matches) return;
         if (scrollY > innerHeight * 0.9) return;
+        if (cube._zz > 0.001) return; // the act-3 wave still owns x (a fast flick back up): don't fight it
         const n = TIP_SWAY.length;
         const i = ((vid.currentTime % LOOP_DUR) / LOOP_DUR) * n;
         const a = TIP_SWAY[Math.floor(i) % n];
@@ -1637,56 +1638,35 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     if (cube) {
       cube.classList.add("is-fixed");
 
-      // act 1 — hero-out: scrubbed drift off the right edge (y stays on
-      // the glow line; the sway ticker keeps x px until 0.9·vh)
-      gsap.to(cube, {
-        xPercent: () => {
-          const cw = cube.offsetWidth || 1;
-          // center → fully past the right edge (+ margin for the glow)
-          return -50 + ((innerWidth * 0.5 + cw * 0.62) / cw) * 100;
-        },
-        rotation: 6,
-        scale: 0.92,
-        // phones: a timed glide that starts as soon as the page moves, not a scrub. A scrubbed transform
-        // is applied on the main thread one frame behind the compositor's scroll, which reads as judder on a
-        // big blended layer; a timed tween runs at full rate and reverses cleanly on the way back up.
-        ...(LITE ? { duration: 0.85, ease: "power2.inOut" } : { ease: "none" }),
-        scrollTrigger: LITE ? {
-          trigger: ".it-hero",
-          start: "top top-=36",
-          toggleActions: "play none none reverse",
-          invalidateOnRefresh: true,
-        } : {
-          trigger: ".it-hero",
-          start: "top top",
-          end: "bottom 60%", // gone before Hello's pop-in trigger fires
-          scrub: true,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      // act 2 — pop back in from the right, centered in the negative
-      // space (smooth power3.out — no bounce, per brand motion rules);
-      // scrolling back up reverses it out the way it came
-      gsap.to(cube, {
-        xPercent: -50,
-        yPercent: () => {
-          const ch = cube.offsetHeight || 1;
-          const restTop = MOB_GLOW_Y * innerHeight - cube.offsetWidth * 0.1;
-          return -50 + ((innerHeight * 0.75 - restTop) / ch) * 100;
-        },
-        scale: 0.78,
-        rotation: -10,
-        duration: 1.05,
-        ease: "power3.out",
-        immediateRender: false,
-        overwrite: "auto",
-        scrollTrigger: {
-          trigger: ".it-intro",
-          start: "top 45%",
-          toggleActions: "play none none reverse",
-        },
-      });
+      // acts 1 + 2 as three explicit poses (Oct 24). They used to be two independent tweens with
+      // toggleActions: when act 2 started while act 1's glide was still running, its overwrite killed
+      // act 1, so scrolling back to the top left the cube parked off the right edge. Now every crossing,
+      // either direction, tweens from wherever the cube is to a known pose, so reverse scroll always
+      // lands clean. (Timed glides, not scrubs: they run at full rate on this big blended layer.)
+      const offX = () => -50 + ((innerWidth * 0.5 + (cube.offsetWidth || 1) * 0.62) / (cube.offsetWidth || 1)) * 100;
+      const helloY = () => {
+        const ch = cube.offsetHeight || 1;
+        const restTop = MOB_GLOW_Y * innerHeight - cube.offsetWidth * 0.1;
+        return -50 + ((innerHeight * 0.75 - restTop) / ch) * 100;
+      };
+      let restPose = null; // the hero pose, read the first time the cube leaves it (after the intro set it)
+      const pose = {
+        rest: () => restPose,
+        off: () => ({ xPercent: offX(), yPercent: restPose ? restPose.yPercent : -50, rotation: 6, scale: 0.92 }),
+        hello: () => ({ xPercent: -50, yPercent: helloY(), rotation: -10, scale: 0.78 }),
+      };
+      const timing = { rest: [0.85, "power2.inOut"], off: [0.85, "power2.inOut"], hello: [1.05, "power3.out"] };
+      const go = (name) => {
+        if (!restPose) restPose = { xPercent: -50, yPercent: gsap.getProperty(cube, "yPercent"), rotation: gsap.getProperty(cube, "rotation"), scale: gsap.getProperty(cube, "scale") };
+        const p = pose[name]();
+        if (!p) return;
+        gsap.to(cube, { ...p, duration: timing[name][0], ease: timing[name][1], overwrite: "auto" });
+      };
+      // act 1: leaves the vortex as soon as the page moves (y stays on the glow line; the sway ticker
+      // keeps x px until 0.9 vh)
+      ScrollTrigger.create({ trigger: ".it-hero", start: "top top-=36", onEnter: () => go("off"), onLeaveBack: () => go("rest") });
+      // act 2: pops back in from the right, centred in Hello's negative space (power3.out, no bounce)
+      ScrollTrigger.create({ trigger: ".it-intro", start: "top 45%", onEnter: () => go("hello"), onLeaveBack: () => go("off") });
 
       // act 3
       if (GECKO) {
@@ -1701,20 +1681,29 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         // right across it, a small rise and settle on every swing, then fades as the first card arrives.
         // Scrubbed, so it retraces cleanly on the way back up. x / y only: act 2 owns
         // xPercent / yPercent / scale / rotation, the float lives on the inner media. Never a spin.
+        // One continuous wave, not segment-by-segment tweens: eased segments come to a full stop at every
+        // turn, which read as stop-go. Here x is a sine (1.5 swings, narrowing as it goes) so the cube
+        // keeps moving through each turn, and y lifts on every swing (|sin|), a soft hop with no bounce.
+        // Driven by one scrubbed 0..1 value with a little smoothing, so it reads the same either way.
+        const setX = gsap.quickSetter(cube, "x", "px");
+        const setY = gsap.quickSetter(cube, "y", "px");
+        const wave = { p: 0 };
         const A = () => innerWidth * 0.24; // swing half-width
-        const zz = gsap.timeline({
+        const drawWave = () => {
+          const p = wave.p, ph = p * Math.PI * 3;            // 1.5 full swings across the gap
+          cube._zz = p;                                       // tells the hero sway ticker to keep off x
+          setX(-Math.sin(ph) * A() * (1 - 0.45 * p));         // starts left, settles toward centre
+          setY(-18 * Math.abs(Math.sin(ph)));                 // a lift on every swing, down at each crossing
+        };
+        gsap.timeline({
           scrollTrigger: {
             trigger: ".it-intro", start: "bottom bottom",
             endTrigger: ".it-card", end: "top 70%",
-            scrub: 0.6, invalidateOnRefresh: true,
+            scrub: 0.8, invalidateOnRefresh: true,
           },
-        });
-        [-1, 1, -0.6, 0].forEach((k, i) => {
-          zz.to(cube, { x: () => k * A(), duration: 1, ease: "sine.inOut" }, i)
-            .to(cube, { y: -18, duration: 0.5, ease: "sine.out" }, i)
-            .to(cube, { y: 0, duration: 0.5, ease: "sine.in" }, i + 0.5);
-        });
-        zz.to(cube, { autoAlpha: 0, duration: 1.8, ease: "power1.in" }, 2.2);   // mostly gone before it crosses the Work heading
+        })
+          .fromTo(wave, { p: 0 }, { p: 1, duration: 1, ease: "none", onUpdate: drawWave }, 0)
+          .fromTo(cube, { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.45, ease: "power1.in", immediateRender: false }, 0.55);   // mostly gone before the Work heading
       }
     }
 

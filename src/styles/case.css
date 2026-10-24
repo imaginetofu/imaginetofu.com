@@ -236,8 +236,9 @@ html.reduced .it-cs-aura { animation: none; }
 .it-cs-pillar-art--timeline i.now { width: 1.6rem; height: 1.6rem; background: currentColor; box-shadow: 0 0 0 6px color-mix(in srgb, var(--it-mint) 25%, transparent); }
 .it-cs-pillar-art--pulse { align-items: center; }
 .it-cs-pillar-art--pulse svg { width: 100%; height: 4.5rem; overflow: visible; }
-.it-cs-pillar-art--pulse polyline { fill: none; stroke: var(--it-eye-dark); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 320; stroke-dashoffset: 320; animation: it-cs-pulse 2.8s ease-in-out infinite; }
-@keyframes it-cs-pulse { 0% { stroke-dashoffset: 320; } 55% { stroke-dashoffset: 0; } 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.it-cs-pillar-art--pulse polyline { fill: none; stroke: var(--it-eye-dark); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 1200; stroke-dashoffset: 1200; animation: it-cs-pulse 2.8s ease-in-out infinite; }
+/* non-scaling-stroke measures dashes on screen, where the stretched line runs ~500px: one dash longer than any tile width */
+@keyframes it-cs-pulse { 0% { stroke-dashoffset: 1200; } 55% { stroke-dashoffset: 0; } 85% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .it-cs-pillar-art--blend i, .it-cs-pillar-art--pulse polyline { animation: none; stroke-dashoffset: 0; } }
 .it-cs-pillar-art--thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; align-content: center; justify-self: stretch; }
 .it-cs-pillar-art--thumbs i { aspect-ratio: 1; border-radius: 3px; background: var(--it-eye-dark); opacity: 0.16; }
@@ -254,7 +255,11 @@ html.reduced .it-cs-aura { animation: none; }
 .it-cs-pillar-art--trio .f b { display: block; height: 2px; background: currentColor; }
 .it-cs-pillar-art--trio .f b:last-child { width: 55%; }
 .it-cs-pillars:not(.is-live) .it-cs-pillar-art--mark { display: none; }
-.it-cs-pillars:not(.is-live) .it-cs-pillar-art--clip { aspect-ratio: 16 / 9; flex: none; }
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art--clip { aspect-ratio: 4 / 3; flex: none; }   /* the tile loops are 4:3: show the whole frame */
+/* static tiles size to their text, so the two arts built from absolutely positioned shapes need a box of
+   their own or they spill over the heading (the desktop flip gives every tile a fixed height instead) */
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art--outgrow { flex: none; aspect-ratio: 16 / 10; }
+.it-cs-pillars:not(.is-live) .it-cs-pillar-art--blend { flex: none; aspect-ratio: 16 / 9; }
 .it-cs-pillars:not(.is-live) .it-cs-pillar-art { margin-top: 0.4rem; }
 
 /* the live, pinned version (desktop + motion): one capture across three

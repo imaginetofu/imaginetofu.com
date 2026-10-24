@@ -175,7 +175,13 @@ export function initCaseWorks({ gsap, ScrollTrigger, reduced }) {
     if (v.dataset.on) return;
     v.dataset.on = "1";
     let useSmall = SMALL, stall;
-    const load = () => { v.src = media(useSmall ? small(v.dataset.clip) : v.dataset.clip); };
+    // setting src runs the media load algorithm, which resets the element to paused; with preload="none"
+    // nothing would then fetch it. A clip that is meant to be playing (begin() already called play()
+    // before its turn in the queue came up) is asked to play again right here.
+    const load = () => {
+      v.src = media(useSmall ? small(v.dataset.clip) : v.dataset.clip);
+      if (live.has(v)) v.play().catch(() => {});
+    };
     const clear = () => { clearTimeout(stall); host.classList.remove("is-stalled"); };
     v.addEventListener("playing", () => { clear(); host.classList.add("is-playing"); });
     v.addEventListener("canplay", clear);
