@@ -185,7 +185,10 @@ export function initPerf({ gsap }) {
       if (!changed) return;
       // the cube (a child of the hero) is still on screen in Hello, so the hero's CSS loops follow both
       for (const s of secs) {
-        const alive = on[s.name] || (s.name === "hero" && (on.intro || WIDE.matches));
+        // the hero stays alive while Hello is on screen (the cube rides into it). The wide exception is the TABLET
+        // landscape layout, where the cube is parked beside the content all the way down; on desktop the cube is
+        // visibility:hidden past Hello, so the hero's loops (sprouts, aura, cloud, headline shimmer) can rest
+        const alive = on[s.name] || (s.name === "hero" && (on.intro || (WIDE.matches && LITE)));
         s.el.classList.toggle("is-off", !alive); // CSS animations pause with it
       }
       if (!cssOnly) sync();

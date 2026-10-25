@@ -222,7 +222,10 @@ Friends reported a laggy hero / After Dark on some desktops. Measured CPU-bound 
 draw calls), not GPU-bound. Look identical (two verifiers: desktop + phone screenshots, geometry within 0.25px).
 - Lenis raf is a PRIORITIZED gsap.ticker listener (main/case/book): scrollTo lands before the frame's tween writes.
 - initPerf's `.is-off` governor runs on desktop too, CSS-only: off-screen sections pause their CSS animations
-  (running animations at the hero 69 -> 22). GSAP loops are left alone on desktop.
+  (running animations at the hero 69 -> 22). GSAP loops are left alone on desktop. The hero itself is governed on
+  desktop too (the cube is visibility:hidden past Hello); only tablet landscape (LITE + wide) keeps it alive, since
+  the cube rides beside the content there. The care tile's peek img needs its own .is-off rule (its animation is
+  set !important on a more specific selector).
 - Hero sprouts: the single <svg class="it-sprouts"> became five HTML `.it-sway` wrappers, each a static seedling
   svg + a tofu svg; the CSS sway and the GSAP drift move HTML boxes (no SVG layout per frame; `--it-sp-*` vars).
   Nav/CTA logo mark = five stacked svg roots. Marquee `.it-tofu-dot` squish is a finite animation fired from
