@@ -1751,55 +1751,88 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         off: () => ({ xPercent: offX(), yPercent: restPose ? restPose.yPercent : -50, rotation: 6, scale: 0.92 }),
         hello: () => ({ xPercent: -50, yPercent: helloY(), rotation: -10, scale: 0.78 }),
       };
-      const timing = { rest: [0.85, "power2.inOut"], off: [0.85, "power2.inOut"], hello: [1.05, "power3.out"] };
-      const go = (name) => {
+      const timing = { rest: [0.85, "power2.inOut"], off: [0.85, "power2.inOut"], hello: [1.2, "power3.out"] };
+      const go = (name, fade = false) => {
         if (!restPose) restPose = { xPercent: -50, yPercent: gsap.getProperty(cube, "yPercent"), rotation: gsap.getProperty(cube, "rotation"), scale: gsap.getProperty(cube, "scale") };
         const p = pose[name]();
         if (!p) return;
-        gsap.to(cube, { ...p, duration: timing[name][0], ease: timing[name][1], overwrite: "auto" });
+        if (name === "hello") {
+          // (Dennis, Oct 25) the tofu stays out of the way while Hello is read: it comes back only once the
+          // soak / press / build doodle has gone by, fading in from the right edge as it glides to centre
+          gsap.fromTo(cube, { xPercent: offX(), autoAlpha: 0 }, { ...p, autoAlpha: 1, duration: timing.hello[0], ease: timing.hello[1], overwrite: "auto" });
+          return;
+        }
+        // leaving Hello upward: fade out to the right (the hero's act 1 slide-out stays visible); rest is always visible
+        gsap.to(cube, { ...p, autoAlpha: fade ? 0 : 1, duration: fade ? 0.6 : timing[name][0], ease: timing[name][1], overwrite: "auto" });
       };
       // act 1: leaves the vortex as soon as the page moves (y stays on the glow line; the sway ticker
       // keeps x px until 0.9 vh)
       ScrollTrigger.create({ trigger: ".it-hero", start: "top top-=36", onEnter: () => go("off"), onLeaveBack: () => go("rest") });
-      // act 2: pops back in from the right, centred in Hello's negative space (power3.out, no bounce)
-      ScrollTrigger.create({ trigger: ".it-intro", start: "top 45%", onEnter: () => go("hello"), onLeaveBack: () => go("off") });
-
-      // act 3
+      // act 2 + 3 (Dennis, Oct 25): the tofu stays out of the way while Hello is read. Once the soak / press /
+      // build doodle has scrolled up past the cube's line, it fades in from the right edge and glides to centre
+      // below the doodle, then hops across the gap to the work cards and fades as the first card arrives.
       if (GECKO) {
-        // Firefox phones: a timed fade once Hello is mostly past (a scrubbed opacity on this big blended
-        // layer is a redraw on every scroll frame there)
+        // Firefox phones: timed glides (a scrubbed opacity on this big blended layer is a redraw on every
+        // scroll frame there), then a timed fade once Hello is mostly past
+        ScrollTrigger.create({ trigger: ".it-intro-doodle", start: "bottom 58%", onEnter: () => go("hello"), onLeaveBack: () => go("off", true) });
         gsap.to(cube, {
           autoAlpha: 0, immediateRender: false, duration: 0.6, ease: "power1.inOut",
           scrollTrigger: { trigger: ".it-intro", start: "bottom 40%", toggleActions: "play none none reverse" },
         });
       } else {
-        // act 3 (Dennis, Oct 24): the gap between Hello and the work cards. The tofu hops softly left and
-        // right across it, a small rise and settle on every swing, then fades as the first card arrives.
-        // Scrubbed, so it retraces cleanly on the way back up. x / y only: act 2 owns
-        // xPercent / yPercent / scale / rotation, the float lives on the inner media. Never a spin.
-        // One continuous wave, not segment-by-segment tweens: eased segments come to a full stop at every
-        // turn, which read as stop-go. Here x is a sine (1.5 swings, narrowing as it goes) so the cube
-        // keeps moving through each turn, and y lifts on every swing (|sin|), a soft hop with no bounce.
-        // Driven by one scrubbed 0..1 value with a little smoothing, so it reads the same either way.
+        // One scrubbed timeline for the whole passage, so the order is guaranteed either way: the glide in
+        // (first 35%) always finishes before the hops begin, and a flick back up retraces it cleanly.
+        // Everything is written procedurally from two proxy values (no cube tweens inside the scrub): a
+        // scrubbed fromTo on the cube itself would, when scrolled back above its start, revert to whatever
+        // the cube had when it first rendered, which on a fast flick is the hero's slide-out mid-flight.
+        // Never a spin. The wave is one continuous sine (1.5 swings, narrowing as it goes) so the cube keeps
+        // moving through each turn, and y lifts on every swing (|sin|), a soft hop with no bounce.
+        // xPercent / yPercent are unitless in GSAP's transform cache (a "%" unit here would write "50%%" and the
+        // browser would reject every transform string from then on); rotation carries "deg", x / y "px"
+        const setXP = gsap.quickSetter(cube, "xPercent");
+        const setYP = gsap.quickSetter(cube, "yPercent");
+        const setRot = gsap.quickSetter(cube, "rotation", "deg");
+        // "scale" is an alias for two cache fields, which a quickSetter cannot address: set both axes
+        const setSX = gsap.quickSetter(cube, "scaleX"), setSY = gsap.quickSetter(cube, "scaleY");
+        const setSc = (v) => { setSX(v); setSY(v); };
+        const setOp = gsap.quickSetter(cube, "opacity");
         const setX = gsap.quickSetter(cube, "x", "px");
         const setY = gsap.quickSetter(cube, "y", "px");
-        const wave = { p: 0 };
+        const show = (op) => { setOp(op); cube.style.visibility = op > 0.005 ? "visible" : "hidden"; };
+        const glide = { g: 0 }, wave = { p: 0 };
+        let entered = false;                                  // the initial refresh renders g = 0 once: ignore it
+        const drawGlide = () => {
+          if (!entered) return;
+          gsap.killTweensOf(cube);                            // the hero's timed off-glide hands over here
+          const e = 1 - (1 - glide.g) * (1 - glide.g);        // power2.out
+          const fx = offX(), fy = restPose ? restPose.yPercent : -50;   // = the off pose (right edge, hero line)
+          setXP(fx + (-50 - fx) * e);
+          setYP(fy + (helloY() - fy) * e);
+          setRot(6 - 16 * e);
+          setSc(0.92 - 0.14 * e);
+          show(Math.min(1, e * 1.4));                         // fully in by 70% of the glide
+        };
         const A = () => innerWidth * 0.24; // swing half-width
         const drawWave = () => {
           const p = wave.p, ph = p * Math.PI * 3;            // 1.5 full swings across the gap
           cube._zz = p;                                       // tells the hero sway ticker to keep off x
           setX(-Math.sin(ph) * A() * (1 - 0.45 * p));         // starts left, settles toward centre
           setY(-18 * Math.abs(Math.sin(ph)));                 // a lift on every swing, down at each crossing
+          const f = Math.max(0, (p - 0.55) / 0.45);           // fades from 55% of the way, power1.in
+          show(1 - f * f);                                    // mostly gone before the Work heading
         };
         gsap.timeline({
           scrollTrigger: {
-            trigger: ".it-intro", start: "bottom bottom",
+            trigger: ".it-intro-doodle", start: "bottom 58%",
             endTrigger: ".it-card", end: "top 70%",
             scrub: 0.8, invalidateOnRefresh: true,
+            onEnter: () => { entered = true; }, onEnterBack: () => { entered = true; },
           },
         })
-          .fromTo(wave, { p: 0 }, { p: 1, duration: 1, ease: "none", onUpdate: drawWave }, 0)
-          .fromTo(cube, { autoAlpha: 1 }, { autoAlpha: 0, duration: 0.45, ease: "power1.in", immediateRender: false }, 0.55);   // mostly gone before the Work heading
+          // placed at 0.001, not 0: at progress 0 (above the passage) the initial refresh renders nothing, so
+          // the hero's own rest / off glides keep the cube until the passage is entered
+          .fromTo(glide, { g: 0 }, { g: 1, duration: 0.35, ease: "none", onUpdate: drawGlide, immediateRender: false }, 0.001)
+          .fromTo(wave, { p: 0 }, { p: 1, duration: 0.65, ease: "none", onUpdate: drawWave, immediateRender: false }, 0.35);
       }
     }
 

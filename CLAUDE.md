@@ -206,8 +206,13 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
 - Oct 24 (phones): case-page story pillars are plain text cards when static (fronts hidden, row loses
   role="img"; the desktop flip keeps its image fronts). Case frames fade in (`.is-fade`, 0.6s) instead of
   the pixel sweep. `.it-cs-hero` clips x (its aura made every case page 25px wider than the phone).
-  Home: act 3 on phones is a scrubbed zig-zag (x +-24vw, a -18px hop per swing) from Hello's bottom to the
-  first card at 70%, fading from 55% of the way (desktop keeps its fade). After Dark's frame loop now runs
+  Home: act 3 on phones is a scrubbed zig-zag (x +-24vw, a -18px hop per swing), fading from 55% of the way
+  (desktop keeps its fade). Oct 25 (Dennis): phones acts 2+3 are ONE scrubbed timeline from the doodle's bottom at
+  58% of the viewport to the first card at 70%: first 35% = the tofu fades in from the right edge and glides to
+  centre below the soak/press/build doodle (it never sits in the Hello text any more), then the hops. Written
+  procedurally from proxy values with quickSetters (xPercent/yPercent unitless, rotation deg, scaleX+scaleY): a
+  scrubbed fromTo on the cube reverted to its mid-flight slide-out when flicked back above the start. `entered`
+  guard ignores the initial refresh; GECKO keeps timed glides at the same trigger. After Dark's frame loop now runs
   until the stage has fully left the screen (it froze 0.4 screens after the pin let go).
 - Oct 24 (later): case clips never played after the Cowork slow-connection pass (play() ran before the
   queued src assignment, which resets to paused with preload=none); `load()` now re-plays live clips.
