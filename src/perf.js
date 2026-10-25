@@ -36,13 +36,73 @@ const SECTIONS = [
   ["footer", ".it-footer"],
 ];
 
-// Desktop: the effects are tuned for a decent GPU. If this machine can't hold the frame rate (an integrated
-// GPU on a high-res screen, say), switch the costliest layers to their cheap versions for the rest of the visit:
-// html.is-strained (CSS) + isStrained() (scripts). Machines that keep up never notice. Phones already run LITE.
-let strained = false;
+/* ---------- desktop tier: full / strained (Oct 25 2026) ----------
+   The effects are tuned for a decent GPU. A machine that cannot hold the frame rate gets the costliest layers in
+   their cheap versions for the rest of the visit: html.is-strained (lite.css, the same swaps phones get) +
+   isStrained() (motion.js: motes at half rate on a 1.25x canvas; dream-glass.js: ring dpr 1.25, resonance at
+   half res, no petal flare, heavy draws at half rate). Phones already run LITE and never enter this tier.
+
+   Evidence, all one-way (nothing ever un-strains; a flip after first paint would be visible):
+   1. The inline <head> script of every page (synchronous, before first paint; skipped on LITE and under reduced
+      motion). Hard evidence flips the tier there: Save-Data / prefers-reduced-data ("save-data"), a dual-core CPU
+      ("cores"). Softer signs only become a HINT (html[data-strain-hint]): 3-4 cores, deviceMemory <= 4 (under
+      8GB, Chromium only), more than 6e6 physical pixels (4K class, 5K iMac, the 16" retina).
+   2. gpuClass() below, once at module init on the home page (behind the preloader, before motion / dream init),
+      from the WebGL renderer string of a throwaway context (context lost right after): a software renderer
+      (SwiftShader, llvmpipe, Microsoft Basic Render) always strains ("gpu-software"); an integrated GPU (Intel
+      HD / UHD / Iris, AMD Radeon(TM) Graphics / Vega / 680M-890M, Mali, Adreno) driving more than 3e6 physical
+      pixels strains ("gpu-igpu": a 1080p laptop keeps full, a 1440p or retina one does not); a 4K-class screen
+      on a GPU that is neither known-capable (Apple M, GeForce / RTX, Radeon RX / Pro, Intel Arc) nor
+      identifiable strains ("px"). A capable GPU on a 4K screen keeps the full look and relies on 3.
+   3. initFrameWatch(): frame times measured from 7s after load (the preloader, bloom and hero intro are heavy by
+      design and end by ~6.8s). A hinted machine strains after one bad ~1.5s window, any other after two
+      ("frames"), so a hinted machine that struggles switches at ~8.5s, still on the hero.
+
+   Read it without a console: html[data-tier] = lite | gecko | full | strained, html[data-strain] lists the
+   reasons above (space separated), html[data-strain-hint] the hints, html[data-gpu] the GPU class. */
+const doc = document.documentElement;
+let strained = !LITE && doc.classList.contains("is-strained");   // the <head> script may have decided already
+const HINT = (doc.dataset.strainHint || "").split(" ").filter(Boolean);
 export const isStrained = () => strained;
+function strain(why) {
+  if (LITE) return;
+  strained = true;
+  doc.classList.add("is-strained");
+  doc.dataset.tier = "strained";
+  doc.dataset.strain = doc.dataset.strain ? doc.dataset.strain + " " + why : why;
+}
+function gpuClass() {
+  let r = "";
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl") || c.getContext("experimental-webgl");
+    if (!gl) return "unknown";                                    // WebGL off: no evidence either way
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    r = String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || "");
+    gl.getExtension("WEBGL_lose_context")?.loseContext();         // never hold a context the page does not use
+  } catch (e) { return "unknown"; }
+  if (/SwiftShader|llvmpipe|softpipe|Microsoft Basic Render|Software Adapter|Mesa OffScreen/i.test(r)) return "software";
+  if (
+    /Intel.*\b(?:HD|UHD|Iris)\b/i.test(r) ||                                   // Intel HD 4000 .. Iris Xe
+    /AMD Radeon(?:\(TM\))? (?:(?:RX )?Vega \d+ )?Graphics\b/i.test(r) ||        // Radeon(TM) Graphics, Vega 8 / RX Vega 10 Graphics
+    /Radeon(?:\(TM\))? \d{3}M\b/i.test(r) ||                                    // Radeon 680M / 780M / 880M / 890M
+    /\bMali\b|\bAdreno\b/i.test(r)
+  ) return "igpu";
+  if (/Apple (?:GPU|M\d)|NVIDIA|GeForce|\bRTX\b|Radeon (?:RX|Pro|VII)\b|Intel.*\bArc\b/i.test(r)) return "capable";
+  return r ? "other" : "unknown";
+}
+doc.dataset.tier = GECKO ? "gecko" : LITE ? "lite" : strained ? "strained" : "full";
+if (!LITE && !strained && !doc.classList.contains("reduced") && document.querySelector(".it-hero")) {
+  const g = gpuClass();
+  const px = innerWidth * innerHeight * devicePixelRatio * devicePixelRatio;
+  doc.dataset.gpu = g;
+  if (g === "software") strain("gpu-software");
+  else if (g === "igpu" && px > 3e6) strain("gpu-igpu");
+  else if (HINT.includes("px") && g !== "capable") strain("px");
+}
 export function initFrameWatch() {
-  if (LITE || !("requestAnimationFrame" in window)) return;
+  if (LITE || strained || !("requestAnimationFrame" in window)) return;
+  const need = HINT.length ? 1 : 2;   // a hinted machine gets one strike, any other two (a single hitch is not evidence)
   let last = 0, buf = [], bad = 0;
   const tick = (t) => {
     const d = last ? t - last : 0; last = t;
@@ -51,11 +111,11 @@ export function initFrameWatch() {
       const s = buf.sort((a, b) => a - b), med = s[s.length >> 1], p90 = s[Math.floor(s.length * 0.9)];
       buf = [];
       bad = med > 20 || p90 > 34 ? bad + 1 : Math.max(0, bad - 1);   // under ~50fps, or frequent long frames
-      if (bad >= 2) { strained = true; document.documentElement.classList.add("is-strained"); return; }
+      if (bad >= need) { strain("frames"); return; }
     }
     requestAnimationFrame(tick);
   };
-  // start once the preloader and the hero intro (both heavy by design) are done
+  // start once the preloader, the bloom and the hero intro (all heavy by design) are done, while the hero is still on screen
   setTimeout(() => requestAnimationFrame(tick), 7000);
 }
 
@@ -65,8 +125,12 @@ export const isOn = (name) => on[name] !== false;
 const WIDE = matchMedia("(min-width: 900px)");
 
 export function initPerf({ gsap }) {
-  // desktop keeps every loop running: its hero cube is a fixed element that rides the whole page
-  if (!LITE) return;
+  // Desktop (Oct 25 2026 smoothness pass): the observer runs here too, CSS-only. A running CSS animation marks its
+  // element for style recalc every frame whether or not it is on screen (33 of them page-wide while the hero shows:
+  // tile auras, After Dark cards / trails / doodles / halo, studio mascot, CTA, footer dot), so sections more than
+  // 35% of a screen away get .is-off on desktop as well. The GSAP loops are left alone there: the hero cube is a
+  // fixed element that rides the whole page, and the hero's own idle loops already gate themselves on isOn().
+  const cssOnly = !LITE;
   const secs = SECTIONS.map(([name, sel]) => ({ name, el: document.querySelector(sel) })).filter((s) => s.el);
   if (!secs.length || !("IntersectionObserver" in window)) return;
 
@@ -124,13 +188,13 @@ export function initPerf({ gsap }) {
         const alive = on[s.name] || (s.name === "hero" && (on.intro || WIDE.matches));
         s.el.classList.toggle("is-off", !alive); // CSS animations pause with it
       }
-      sync();
+      if (!cssOnly) sync();
     },
     { rootMargin: "35% 0px 35% 0px" }
   );
   secs.forEach((s) => { on[s.name] = true; io.observe(s.el); });
 
   // loops created after a section went quiet (delayed starts) get caught on the next pass
-  setInterval(() => { if (!document.hidden) sync(); }, 2500);
+  if (!cssOnly) setInterval(() => { if (!document.hidden) sync(); }, 2500);
 }
 

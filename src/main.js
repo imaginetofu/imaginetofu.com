@@ -61,7 +61,11 @@ if (!reduced && TOUCH) {
   // continuous lerp smoothing (follows trackpad and wheel input fluidly) instead of a fixed-duration ease
   lenis = new Lenis({ lerp: 0.085, smoothWheel: true, wheelMultiplier: 1 });
   lenis.on("scroll", ScrollTrigger.update);
-  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  // prioritized (third arg): Lenis moves the window BEFORE gsap renders this frame's tweens. The
+  // ticker's default order ran the tween writes first, so window.scrollTo found dirty styles and
+  // forced a synchronous style + layout of the whole page every scrolled frame, and the browser
+  // then did it all again at the end of the frame (measured: 2 style/layout passes per frame).
+  gsap.ticker.add((t) => lenis.raf(t * 1000), false, true);
   gsap.ticker.lagSmoothing(0);
   window.lenis = lenis; // debug/verification handle
 }

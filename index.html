@@ -174,6 +174,20 @@
   <script>document.documentElement.classList.add('js');
     if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
+    /* desktop tier before first paint (one-way; the rules are documented in src/perf.js). Only hard evidence
+       flips the tier here (Save-Data, a dual-core CPU); softer hints (4 cores, under 8GB, a 4K-class screen) are
+       recorded for perf.js, which weighs them with the GPU and the measured frame rate. */
+    (function (h, n, w) { if (h.classList.contains('is-lite')) { h.dataset.tier = 'lite'; return; }
+      var why = [], hint = []; try { if (!h.classList.contains('reduced')) {
+        if ((n.connection && n.connection.saveData) || matchMedia('(prefers-reduced-data: reduce)').matches) why.push('save-data');
+        if (n.hardwareConcurrency <= 2) why.push('cores'); else if (n.hardwareConcurrency <= 4) hint.push('cores');
+        if (n.deviceMemory <= 4) hint.push('memory');
+        if (w.innerWidth * w.innerHeight * w.devicePixelRatio * w.devicePixelRatio > 6e6) hint.push('px');
+      } } catch (e) {}
+      if (why.length) { h.classList.add('is-strained'); h.dataset.strain = why.join(' '); }
+      if (hint.length) h.dataset.strainHint = hint.join(' ');
+      h.dataset.tier = why.length ? 'strained' : 'full';
+    })(document.documentElement, navigator, window);
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
        unstyled page hidden; base.css releases it with a fade (3s failsafe). -->
@@ -241,16 +255,20 @@
   <header class="it-nav" id="it-nav">
     <a class="it-nav-brand" href="#top" aria-label="Imagine Tofu — home">
       <!-- identity v1 combo mark: animated cube + orbit ring (inline) -->
-      <svg class="it-logo-mark" viewBox="4.9 33 106.99 60" aria-hidden="true">
-        <defs>
-          <linearGradient id="itg-nav" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
-          </linearGradient>
-        </defs>
-        <g class="it-lm-ring" fill="none" stroke="url(#itg-nav)" stroke-width="4" stroke-linecap="round">
-          <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
-        </g>
-        <g class="it-lm-cube">
+      <span class="it-logo-mark" aria-hidden="true">
+        <!-- five stacked <svg> roots (ring, cube, ring-front, spark, spark2): each idle loop animates an HTML box on
+             the compositor; animated <g>s inside one svg re-laid-out and repainted the mark every frame -->
+        <svg class="it-lm-layer it-lm-ring" viewBox="4.9 33 106.99 60">
+          <defs>
+            <linearGradient id="itg-nav" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#itg-nav)" stroke-width="4" stroke-linecap="round">
+            <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
+          </g>
+        </svg>
+        <svg class="it-lm-layer it-lm-cube" viewBox="4.9 33 106.99 60">
           <rect x="28" y="35" width="64" height="56" rx="15" fill="#f1ead9"/>
           <g fill="none" stroke="#3a3340" stroke-linecap="round">
             <path d="M43,61.5 Q48.5,55.5 54,61.5" stroke-width="4.5"/>
@@ -259,13 +277,19 @@
           </g>
           <ellipse cx="44" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
           <ellipse cx="76" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
-        </g>
-        <g class="it-lm-ring-front" fill="none" stroke="url(#itg-nav)" stroke-width="4" stroke-linecap="round">
-          <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
-        </g>
-        <path class="it-lm-spark" d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9" opacity="1"/>
-        <path class="it-lm-spark2" d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF" opacity="0.9"/>
-      </svg>
+        </svg>
+        <svg class="it-lm-layer it-lm-ring-front" viewBox="4.9 33 106.99 60">
+          <g fill="none" stroke="url(#itg-nav)" stroke-width="4" stroke-linecap="round">
+            <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
+          </g>
+        </svg>
+        <svg class="it-lm-layer it-lm-spark" viewBox="4.9 33 106.99 60">
+          <path d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9"/>
+        </svg>
+        <svg class="it-lm-layer it-lm-spark2" viewBox="4.9 33 106.99 60">
+          <path d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF"/>
+        </svg>
+      </span>
       <img class="it-logo-word" src="/brand/logo-wordmark.svg" alt="" width="491" height="109" /></a>
     <nav class="it-nav-links" aria-label="Primary">
       <a href="#work">Work</a>
@@ -316,6 +340,10 @@
 
       <!-- floating glass tofu cube (RZV-style journey; scrub choreography in motion.js) -->
       <figure class="it-cube" aria-hidden="true">
+        <!-- .it-cube-stack (Oct 25 2026) carries the float / jiggle / cursor-parallax transforms for all three
+             frames at once: one composited box instead of three per-frame writes (two on invisible frames). The
+             imgs keep their own opacity crossfades and the bloom's translate / scale. -->
+        <div class="it-cube-stack">
         <img class="it-cube-media" src="/brand/tofu-cube.webp" alt="" width="2048" height="2048" decoding="async" fetchpriority="high" />
         <!-- blink frame: closed-eye render (transparent PNG) crossfaded in
              by JS. onerror removes it gracefully if the asset isn't there. -->
@@ -323,102 +351,119 @@
         <!-- joy frame: happy ≧◡≦ render, crossfaded in on click/poke.
              onerror removes it gracefully if the asset isn't there. -->
         <img class="it-cube-media it-cube-joy" src="/brand/tofu-cube-joy.webp" alt="" width="2048" height="2048" decoding="async" onerror="this.remove()" />
+        </div>
       </figure>
 
       <!-- mini seedlings along the bottom: each grows, blows a bubble,
-           and the bubble pops into a floating tofu -->
-      <svg class="it-sprouts" viewBox="0 0 1440 420" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
-        <g class="it-sway" transform="translate(150 420)">
-          <g class="it-seedling">
-            <path class="it-stem" d="M0 0 C-3 -22 3 -40 0 -58" />
-            <g class="it-sd-top">
-              <path class="it-sd-leaf" d="M0 -58 C-8 -61 -16 -67 -17 -76 C-17.5 -84 -10 -87 -5 -82 C-1.5 -78 0 -68 0 -58 Z" />
-              <path class="it-sd-leaf" d="M0 -58 C8 -62 15 -69 16 -78 C16.5 -85 9.5 -88 5 -83 C1.5 -79 0 -68 0 -58 Z" />
-              <path class="it-sd-leaf" d="M0 -58 Q-6 -72 -4 -84 Q-0.5 -74 0 -58 Z" />
-              <path class="it-sd-leaf" d="M0 -58 Q5 -73 3.5 -84 Q0.5 -74 0 -58 Z" />
-              <ellipse class="it-sd-bean" cx="-13" cy="-80" rx="4" ry="2.8" transform="rotate(-24 -13 -80)" />
+           and the bubble pops into a floating tofu.
+           Oct 25 2026 (desktop smoothness pass): five HTML .it-sway wrappers instead of one <svg>. The sway
+           (CSS rotate) now turns an HTML box and the zero-g drift (GSAP) moves the tofu <svg> root, so both run
+           on the compositor; as <g>s inside one svg they re-laid-out the whole subtree and repainted the
+           1920x418 band every frame. The old 1440x420 xMidYMax placement is CSS (--it-sp-s, sections.css):
+           --it-sp-x is the stem's x in that view box, --it-sp-ty the tofu block's resting height above the
+           stem base, --it-sp-w / -h its size (the view box of each tofu is its block, base at y = 0). -->
+      <div class="it-sprouts" aria-hidden="true">
+        <div class="it-sway" style="--it-sp-x: 150">
+          <svg class="it-seedling-svg" viewBox="-60 -150 120 150">
+            <g class="it-seedling">
+              <path class="it-stem" d="M0 0 C-3 -22 3 -40 0 -58" />
+              <g class="it-sd-top">
+                <path class="it-sd-leaf" d="M0 -58 C-8 -61 -16 -67 -17 -76 C-17.5 -84 -10 -87 -5 -82 C-1.5 -78 0 -68 0 -58 Z" />
+                <path class="it-sd-leaf" d="M0 -58 C8 -62 15 -69 16 -78 C16.5 -85 9.5 -88 5 -83 C1.5 -79 0 -68 0 -58 Z" />
+                <path class="it-sd-leaf" d="M0 -58 Q-6 -72 -4 -84 Q-0.5 -74 0 -58 Z" />
+                <path class="it-sd-leaf" d="M0 -58 Q5 -73 3.5 -84 Q0.5 -74 0 -58 Z" />
+                <ellipse class="it-sd-bean" cx="-13" cy="-80" rx="4" ry="2.8" transform="rotate(-24 -13 -80)" />
+              </g>
             </g>
-          </g>
-          <circle class="it-bubble" cx="0" cy="-66" r="8" />
-          <g class="it-sprout-tofu">
-            <rect class="it-tofu-block" x="-9" y="-111" width="18" height="15" rx="5" />
-            <rect class="it-tofu-eye" x="-5.6" y="-106.5" width="2.6" height="5" rx="1.3" />
-            <rect class="it-tofu-eye" x="2" y="-106.5" width="2.6" height="5" rx="1.3" />
-          </g>
-        </g>
-        <g class="it-sway" transform="translate(360 420)">
-          <g class="it-seedling">
-            <path class="it-stem" d="M0 0 C3 -18 -3 -30 0 -44" />
-            <g class="it-sd-top">
-              <path class="it-sd-leaf" d="M0 -44 C-6 -46 -12 -51 -13 -58 C-13.4 -64 -7.6 -66 -3.8 -62.5 C-1.1 -59.5 0 -52 0 -44 Z" />
-              <path class="it-sd-leaf" d="M0 -44 C6 -47 11.4 -52.5 12.2 -59.5 C12.5 -64.5 7.2 -67 3.8 -63 C1.1 -60 0 -52 0 -44 Z" />
-              <path class="it-sd-leaf" d="M0 -44 Q-4.6 -54.5 -3 -63.5 Q-0.4 -56 0 -44 Z" />
-              <path class="it-sd-leaf" d="M0 -44 Q3.8 -55.5 2.7 -64 Q0.4 -56 0 -44 Z" />
-              <ellipse class="it-sd-bean" cx="-9.9" cy="-60.5" rx="3" ry="2.1" transform="rotate(18 -9.9 -60.5)" />
+            <circle class="it-bubble" cx="0" cy="-66" r="8" />
+          </svg>
+          <svg class="it-sprout-tofu" viewBox="-9 -15 18 15" style="--it-sp-w: 18; --it-sp-h: 15; --it-sp-ty: 96">
+              <rect class="it-tofu-block" x="-9" y="-15" width="18" height="15" rx="5" />
+              <rect class="it-tofu-eye" x="-5.6" y="-10.5" width="2.6" height="5" rx="1.3" />
+              <rect class="it-tofu-eye" x="2" y="-10.5" width="2.6" height="5" rx="1.3" />
+          </svg>
+        </div>
+        <div class="it-sway" style="--it-sp-x: 360">
+          <svg class="it-seedling-svg" viewBox="-60 -150 120 150">
+            <g class="it-seedling">
+              <path class="it-stem" d="M0 0 C3 -18 -3 -30 0 -44" />
+              <g class="it-sd-top">
+                <path class="it-sd-leaf" d="M0 -44 C-6 -46 -12 -51 -13 -58 C-13.4 -64 -7.6 -66 -3.8 -62.5 C-1.1 -59.5 0 -52 0 -44 Z" />
+                <path class="it-sd-leaf" d="M0 -44 C6 -47 11.4 -52.5 12.2 -59.5 C12.5 -64.5 7.2 -67 3.8 -63 C1.1 -60 0 -52 0 -44 Z" />
+                <path class="it-sd-leaf" d="M0 -44 Q-4.6 -54.5 -3 -63.5 Q-0.4 -56 0 -44 Z" />
+                <path class="it-sd-leaf" d="M0 -44 Q3.8 -55.5 2.7 -64 Q0.4 -56 0 -44 Z" />
+                <ellipse class="it-sd-bean" cx="-9.9" cy="-60.5" rx="3" ry="2.1" transform="rotate(18 -9.9 -60.5)" />
+              </g>
             </g>
-          </g>
-          <circle class="it-bubble" cx="0" cy="-52" r="7" />
-          <g class="it-sprout-tofu">
-            <rect class="it-tofu-block" x="-6" y="-94" width="12" height="10" rx="3.5" />
-            <path class="it-tofu-eye-happy" d="M-4 -88.6 q1.4 -2.2 2.8 0" />
-            <path class="it-tofu-eye-happy" d="M1.2 -88.6 q1.4 -2.2 2.8 0" />
-          </g>
-        </g>
-        <g class="it-sway" transform="translate(760 420)">
-          <g class="it-seedling">
-            <path class="it-stem" d="M0 0 C-2 -16 2 -26 0 -38" />
-            <g class="it-sd-top">
-              <path class="it-sd-leaf" d="M0 -38 C-5.3 -40 -10.6 -44.4 -11.2 -50.2 C-11.6 -55.4 -6.6 -57.4 -3.3 -54.1 C-1 -51.5 0 -44.9 0 -38 Z" />
-              <path class="it-sd-leaf" d="M0 -38 C5.3 -40.6 9.9 -45.5 10.6 -51.5 C10.9 -56.1 6.3 -58.1 3.3 -54.8 C1 -52.1 0 -44.9 0 -38 Z" />
-              <path class="it-sd-leaf" d="M0 -38 Q-4 -47.5 -2.6 -55.4 Q-0.3 -48.8 0 -38 Z" />
-              <path class="it-sd-leaf" d="M0 -38 Q3.3 -48.2 2.3 -55.4 Q0.3 -48.8 0 -38 Z" />
-              <ellipse class="it-sd-bean" cx="-8.6" cy="-52.8" rx="2.6" ry="1.8" transform="rotate(-20 -8.6 -52.8)" />
+            <circle class="it-bubble" cx="0" cy="-52" r="7" />
+          </svg>
+          <svg class="it-sprout-tofu" viewBox="-6 -10 12 10" style="--it-sp-w: 12; --it-sp-h: 10; --it-sp-ty: 84">
+              <rect class="it-tofu-block" x="-6" y="-10" width="12" height="10" rx="3.5" />
+              <path class="it-tofu-eye-happy" d="M-4 -4.6 q1.4 -2.2 2.8 0" />
+              <path class="it-tofu-eye-happy" d="M1.2 -4.6 q1.4 -2.2 2.8 0" />
+          </svg>
+        </div>
+        <div class="it-sway" style="--it-sp-x: 760">
+          <svg class="it-seedling-svg" viewBox="-60 -150 120 150">
+            <g class="it-seedling">
+              <path class="it-stem" d="M0 0 C-2 -16 2 -26 0 -38" />
+              <g class="it-sd-top">
+                <path class="it-sd-leaf" d="M0 -38 C-5.3 -40 -10.6 -44.4 -11.2 -50.2 C-11.6 -55.4 -6.6 -57.4 -3.3 -54.1 C-1 -51.5 0 -44.9 0 -38 Z" />
+                <path class="it-sd-leaf" d="M0 -38 C5.3 -40.6 9.9 -45.5 10.6 -51.5 C10.9 -56.1 6.3 -58.1 3.3 -54.8 C1 -52.1 0 -44.9 0 -38 Z" />
+                <path class="it-sd-leaf" d="M0 -38 Q-4 -47.5 -2.6 -55.4 Q-0.3 -48.8 0 -38 Z" />
+                <path class="it-sd-leaf" d="M0 -38 Q3.3 -48.2 2.3 -55.4 Q0.3 -48.8 0 -38 Z" />
+                <ellipse class="it-sd-bean" cx="-8.6" cy="-52.8" rx="2.6" ry="1.8" transform="rotate(-20 -8.6 -52.8)" />
+              </g>
             </g>
-          </g>
-          <circle class="it-bubble" cx="0" cy="-46" r="6.5" />
-          <g class="it-sprout-tofu">
-            <rect class="it-tofu-block" x="-7" y="-86" width="14" height="12" rx="4" />
-            <rect class="it-tofu-eye" x="-4.2" y="-82.5" width="2.2" height="4" rx="1.1" />
-            <rect class="it-tofu-eye" x="1.8" y="-82.5" width="2.2" height="4" rx="1.1" />
-          </g>
-        </g>
-        <g class="it-sway" transform="translate(1080 420)">
-          <g class="it-seedling">
-            <path class="it-stem" d="M0 0 C4 -34 -4 -60 0 -88" />
-            <g class="it-sd-top">
-              <path class="it-sd-leaf" d="M0 -88 C-12 -92.5 -24 -100.5 -25.5 -114 C-26.3 -126 -15 -130.5 -7.5 -123 C-2.3 -117 0 -103 0 -88 Z" />
-              <path class="it-sd-leaf" d="M0 -88 C12 -93 22.5 -103.5 24 -117 C24.8 -127.5 14.3 -132 7.5 -124.5 C2.3 -118.5 0 -103 0 -88 Z" />
-              <path class="it-sd-leaf" d="M0 -88 Q-9 -109 -6 -126 Q-0.8 -111 0 -88 Z" />
-              <path class="it-sd-leaf" d="M0 -88 Q7.5 -110 5.3 -126 Q0.8 -111 0 -88 Z" />
-              <ellipse class="it-sd-bean" cx="-19.5" cy="-120" rx="6" ry="4.2" transform="rotate(-24 -19.5 -120)" />
+            <circle class="it-bubble" cx="0" cy="-46" r="6.5" />
+          </svg>
+          <svg class="it-sprout-tofu" viewBox="-7 -12 14 12" style="--it-sp-w: 14; --it-sp-h: 12; --it-sp-ty: 74">
+              <rect class="it-tofu-block" x="-7" y="-12" width="14" height="12" rx="4" />
+              <rect class="it-tofu-eye" x="-4.2" y="-8.5" width="2.2" height="4" rx="1.1" />
+              <rect class="it-tofu-eye" x="1.8" y="-8.5" width="2.2" height="4" rx="1.1" />
+          </svg>
+        </div>
+        <div class="it-sway" style="--it-sp-x: 1080">
+          <svg class="it-seedling-svg" viewBox="-60 -150 120 150">
+            <g class="it-seedling">
+              <path class="it-stem" d="M0 0 C4 -34 -4 -60 0 -88" />
+              <g class="it-sd-top">
+                <path class="it-sd-leaf" d="M0 -88 C-12 -92.5 -24 -100.5 -25.5 -114 C-26.3 -126 -15 -130.5 -7.5 -123 C-2.3 -117 0 -103 0 -88 Z" />
+                <path class="it-sd-leaf" d="M0 -88 C12 -93 22.5 -103.5 24 -117 C24.8 -127.5 14.3 -132 7.5 -124.5 C2.3 -118.5 0 -103 0 -88 Z" />
+                <path class="it-sd-leaf" d="M0 -88 Q-9 -109 -6 -126 Q-0.8 -111 0 -88 Z" />
+                <path class="it-sd-leaf" d="M0 -88 Q7.5 -110 5.3 -126 Q0.8 -111 0 -88 Z" />
+                <ellipse class="it-sd-bean" cx="-19.5" cy="-120" rx="6" ry="4.2" transform="rotate(-24 -19.5 -120)" />
+              </g>
             </g>
-          </g>
-          <circle class="it-bubble" cx="0" cy="-97" r="9" />
-          <g class="it-sprout-tofu">
-            <rect class="it-tofu-block" x="-9" y="-148" width="18" height="15" rx="5" />
-            <path class="it-tofu-eye-happy" d="M-6.2 -139.5 q1.9 -3 3.8 0" />
-            <path class="it-tofu-eye-happy" d="M1.4 -139.5 q1.9 -3 3.8 0" />
-          </g>
-        </g>
-        <g class="it-sway" transform="translate(1320 420)">
-          <g class="it-seedling">
-            <path class="it-stem" d="M0 0 C-3 -20 3 -34 0 -50" />
-            <g class="it-sd-top">
-              <path class="it-sd-leaf" d="M0 -50 C-6.9 -52.5 -13.8 -57.6 -14.6 -65.4 C-15 -72.2 -8.6 -74.8 -4.3 -70.5 C-1.3 -67 0 -58.5 0 -50 Z" />
-              <path class="it-sd-leaf" d="M0 -50 C6.9 -53.3 12.9 -59.3 13.8 -67 C14.2 -73 8.2 -75.7 4.3 -71.4 C1.3 -67.9 0 -58.5 0 -50 Z" />
-              <path class="it-sd-leaf" d="M0 -50 Q-5.2 -62 -3.4 -72.2 Q-0.4 -63.6 0 -50 Z" />
-              <path class="it-sd-leaf" d="M0 -50 Q4.3 -62.8 3 -72.2 Q0.4 -63.6 0 -50 Z" />
-              <ellipse class="it-sd-bean" cx="-11.2" cy="-68.8" rx="3.4" ry="2.4" transform="rotate(20 -11.2 -68.8)" />
+            <circle class="it-bubble" cx="0" cy="-97" r="9" />
+          </svg>
+          <svg class="it-sprout-tofu" viewBox="-9 -15 18 15" style="--it-sp-w: 18; --it-sp-h: 15; --it-sp-ty: 133">
+              <rect class="it-tofu-block" x="-9" y="-15" width="18" height="15" rx="5" />
+              <path class="it-tofu-eye-happy" d="M-6.2 -6.5 q1.9 -3 3.8 0" />
+              <path class="it-tofu-eye-happy" d="M1.4 -6.5 q1.9 -3 3.8 0" />
+          </svg>
+        </div>
+        <div class="it-sway" style="--it-sp-x: 1320">
+          <svg class="it-seedling-svg" viewBox="-60 -150 120 150">
+            <g class="it-seedling">
+              <path class="it-stem" d="M0 0 C-3 -20 3 -34 0 -50" />
+              <g class="it-sd-top">
+                <path class="it-sd-leaf" d="M0 -50 C-6.9 -52.5 -13.8 -57.6 -14.6 -65.4 C-15 -72.2 -8.6 -74.8 -4.3 -70.5 C-1.3 -67 0 -58.5 0 -50 Z" />
+                <path class="it-sd-leaf" d="M0 -50 C6.9 -53.3 12.9 -59.3 13.8 -67 C14.2 -73 8.2 -75.7 4.3 -71.4 C1.3 -67.9 0 -58.5 0 -50 Z" />
+                <path class="it-sd-leaf" d="M0 -50 Q-5.2 -62 -3.4 -72.2 Q-0.4 -63.6 0 -50 Z" />
+                <path class="it-sd-leaf" d="M0 -50 Q4.3 -62.8 3 -72.2 Q0.4 -63.6 0 -50 Z" />
+                <ellipse class="it-sd-bean" cx="-11.2" cy="-68.8" rx="3.4" ry="2.4" transform="rotate(20 -11.2 -68.8)" />
+              </g>
             </g>
-          </g>
-          <circle class="it-bubble" cx="0" cy="-58" r="7" />
-          <g class="it-sprout-tofu">
-            <rect class="it-tofu-block" x="-7.5" y="-104" width="15" height="12.5" rx="4" />
-            <rect class="it-tofu-eye" x="-4.4" y="-100.3" width="2.2" height="4.2" rx="1.1" />
-            <rect class="it-tofu-eye" x="2.2" y="-100.3" width="2.2" height="4.2" rx="1.1" />
-          </g>
-        </g>
-      </svg>
+            <circle class="it-bubble" cx="0" cy="-58" r="7" />
+          </svg>
+          <svg class="it-sprout-tofu" viewBox="-7.5 -12.5 15 12.5" style="--it-sp-w: 15; --it-sp-h: 12.5; --it-sp-ty: 91.5">
+              <rect class="it-tofu-block" x="-7.5" y="-12.5" width="15" height="12.5" rx="4" />
+              <rect class="it-tofu-eye" x="-4.4" y="-8.8" width="2.2" height="4.2" rx="1.1" />
+              <rect class="it-tofu-eye" x="2.2" y="-8.8" width="2.2" height="4.2" rx="1.1" />
+          </svg>
+        </div>
+      </div>
 
       <div class="it-hero-text">
         <h1 class="it-display">
@@ -919,16 +964,20 @@
       </div>
       <figure class="it-cta-mascot" aria-hidden="true" data-reveal>
         <!-- identity v1 mark at hero scale — the logo tofu greets you at the close -->
-        <svg class="it-logo-mark it-logo-mark--cta" viewBox="4.9 33 106.99 60">
-          <defs>
-            <linearGradient id="itg-cta" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
-            </linearGradient>
-          </defs>
-          <g class="it-lm-ring" fill="none" stroke="url(#itg-cta)" stroke-width="4" stroke-linecap="round">
-            <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
-          </g>
-          <g class="it-lm-cube">
+        <span class="it-logo-mark it-logo-mark--cta" aria-hidden="true">
+          <!-- five stacked <svg> roots (ring, cube, ring-front, spark, spark2): each idle loop animates an HTML box on
+               the compositor; animated <g>s inside one svg re-laid-out and repainted the mark every frame -->
+          <svg class="it-lm-layer it-lm-ring" viewBox="4.9 33 106.99 60">
+            <defs>
+              <linearGradient id="itg-cta" x1="0" y1="1" x2="1" y2="0">
+                <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
+              </linearGradient>
+            </defs>
+            <g fill="none" stroke="url(#itg-cta)" stroke-width="4" stroke-linecap="round">
+              <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
+            </g>
+          </svg>
+          <svg class="it-lm-layer it-lm-cube" viewBox="4.9 33 106.99 60">
             <rect x="28" y="35" width="64" height="56" rx="15" fill="#f1ead9"/>
             <g fill="none" stroke="#3a3340" stroke-linecap="round">
               <path d="M43,61.5 Q48.5,55.5 54,61.5" stroke-width="4.5"/>
@@ -937,13 +986,19 @@
             </g>
             <ellipse cx="44" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
             <ellipse cx="76" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
-          </g>
-          <g class="it-lm-ring-front" fill="none" stroke="url(#itg-cta)" stroke-width="4" stroke-linecap="round">
-            <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
-          </g>
-          <path class="it-lm-spark" d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9" opacity="1"/>
-          <path class="it-lm-spark2" d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF" opacity="0.9"/>
-        </svg>
+          </svg>
+          <svg class="it-lm-layer it-lm-ring-front" viewBox="4.9 33 106.99 60">
+            <g fill="none" stroke="url(#itg-cta)" stroke-width="4" stroke-linecap="round">
+              <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
+            </g>
+          </svg>
+          <svg class="it-lm-layer it-lm-spark" viewBox="4.9 33 106.99 60">
+            <path d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9"/>
+          </svg>
+          <svg class="it-lm-layer it-lm-spark2" viewBox="4.9 33 106.99 60">
+            <path d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF"/>
+          </svg>
+        </span>
       </figure>
       <p class="it-eyebrow" data-reveal>Say hello</p>
       <h2 class="it-display it-cta-title">

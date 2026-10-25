@@ -155,9 +155,10 @@ html :is(.it-rotate, .it-cs-quote, .it-dream-word, .it-dream-flow, .it-dream-x-g
   initial-value: 0deg;
   inherits: false;
 }
+/* only the em carries the stir: the hero's span.it-display-bloom wraps nothing but its em, whose own clipped
+   gradient covers the same glyphs, so a second copy on the span was one more recalc and text repaint per frame */
 .it-display-bloom em,
-em.it-display-bloom,
-.it-display-bloom {
+em.it-display-bloom {
   background: conic-gradient(
     from var(--it-stir) at 28% 132%,
     var(--it-mint),
@@ -176,8 +177,7 @@ em.it-display-bloom,
 }
 @media (prefers-reduced-motion: reduce) {
   .it-display-bloom em,
-  em.it-display-bloom,
-  .it-display-bloom {
+  em.it-display-bloom {
     animation: none;
   }
 }
@@ -255,25 +255,41 @@ em.it-display-bloom,
 }
 .it-brand-caps { letter-spacing: 0.05em; font-weight: 640; }
 
-/* combo mark (identity v1): inline animated mark + outlined wordmark img */
-.it-logo-mark { width: 78px; height: 44px; overflow: visible; flex: none; }
+/* combo mark (identity v1): inline animated mark + outlined wordmark img.
+   Oct 25 2026: the animated mark is a box of five stacked <svg> roots (.it-lm-layer: ring, cube, ring-front,
+   spark, spark2) so each idle loop animates an HTML box on the compositor; animated <g>s inside one svg
+   re-laid-out and repainted the mark every frame (the nav is fixed, so that never stopped). The footer's
+   still mark keeps the single svg. */
+.it-logo-mark { position: relative; display: block; width: 78px; height: 44px; overflow: visible; flex: none; }
+span.it-logo-mark { container-type: size; } /* the layers read the mark's box as cqw / cqh */
+.it-lm-layer {
+  position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+  --it-lm-k: min(100cqw / 106.99, 100cqh / 60); /* one view-box unit on screen (xMidYMid meet) */
+}
 .it-logo-word { height: 28.5px; width: auto; display: block; }
 /* idle motion per the identity spec: ring + sparks sway ±3.5° (6s), cube
-   floats ±2.4px (5.5s), sparks twinkle via opacity only. origin 60,63 in
-   user units → 55.1,30 relative to the view-box origin (4.9,33) */
+   floats ±2.4 units (5.5s), sparks twinkle via opacity only. The origin is the
+   one the shipped page really used, measured: the old transform-box: view-box
+   put its reference box at user (0,0), so "55.1px 30px" was user (55.1, 30),
+   2px above the mark's top edge, not the (60, 63) the spec names. Kept as is
+   so the sway is identical; for the spec's point use calc(... + 55.1 * k) and
+   calc(... + 30 * k) below. k = one view-box unit; the view box is centred in
+   the layer box (xMidYMid meet), hence the (box - view box) / 2 terms. */
 .it-logo-mark .it-lm-ring,
 .it-logo-mark .it-lm-ring-front,
 .it-logo-mark .it-lm-spark,
 .it-logo-mark .it-lm-spark2 {
-  transform-box: view-box;
-  transform-origin: 55.1px 30px;
+  transform-origin: calc((100cqw - 106.99 * var(--it-lm-k)) / 2 + 50.2 * var(--it-lm-k)) calc((100cqh - 60 * var(--it-lm-k)) / 2 - 3 * var(--it-lm-k));
   animation: it-logo-sway 6s ease-in-out infinite alternate;
 }
+/* was the spark2 path's own opacity attribute; the twinkle overrides it while it runs, exactly as before */
+.it-logo-mark .it-lm-spark2 { opacity: 0.9; }
 .it-logo-mark .it-lm-cube { animation: it-logo-float 5.5s ease-in-out infinite alternate; }
 .it-logo-mark .it-lm-spark { animation: it-logo-sway 6s ease-in-out infinite alternate, it-logo-twinkle 2.8s ease-in-out infinite; }
 .it-logo-mark .it-lm-spark2 { animation: it-logo-sway 6s ease-in-out infinite alternate, it-logo-twinkle 3.6s ease-in-out infinite -1.2s; }
 @keyframes it-logo-sway { from { transform: rotate(-3.5deg); } to { transform: rotate(3.5deg); } }
-@keyframes it-logo-float { from { transform: translateY(-2.4px); } to { transform: translateY(2.4px); } }
+/* 2.4 view-box units: on the old <g> "2.4px" was user units (1.75px on the 78x44 nav mark, 3.5px on the CTA one) */
+@keyframes it-logo-float { from { transform: translateY(calc(-2.4 * var(--it-lm-k, 1px))); } to { transform: translateY(calc(2.4 * var(--it-lm-k, 1px))); } }
 @keyframes it-logo-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) {
   .it-logo-mark .it-lm-ring, .it-logo-mark .it-lm-ring-front, .it-logo-mark .it-lm-cube,
@@ -645,7 +661,7 @@ html.cursor-on body, html.cursor-on a, html.cursor-on button { cursor: none; }
 .it-logo-mark--still .it-lm-ring, .it-logo-mark--still .it-lm-ring-front, .it-logo-mark--still .it-lm-cube,
 .it-logo-mark--still .it-lm-spark, .it-logo-mark--still .it-lm-spark2 { animation: none; }
 /* CTA-scale mark */
-.it-logo-mark--cta { width: 100%; height: auto; }
+.it-logo-mark--cta { width: 100%; height: auto; aspect-ratio: 106.99 / 60; } /* the view box ratio the old svg sized itself by */
 .it-footer-links { display: flex; flex-wrap: wrap; gap: 1.6rem; }
 .it-footer-links a {
   font-size: 0.92rem;

@@ -222,6 +222,9 @@
   -webkit-mask-image: radial-gradient(closest-side at 50% 50%, #000 60%, transparent 95%);
   mask-image: radial-gradient(closest-side at 50% 50%, #000 60%, transparent 95%);
 }
+/* the three frames' shared motion box (float, jiggle, cursor parallax; Oct 25 2026): one transform write per
+   frame on a composited box instead of three on the imgs. The imgs keep their crossfades and the bloom. */
+.it-cube-stack { position: relative; width: 100%; will-change: transform; }
 .it-mascot-media {
   width: 100%;
   height: auto;
@@ -231,6 +234,12 @@
 }
 
 /* --- botanical sprouts --- */
+/* Oct 25 2026: a <div> of five HTML .it-sway wrappers (one seedling <svg> + one tofu <svg> each) replaces the
+   single <svg viewBox="0 0 1440 420" preserveAspectRatio="xMidYMax meet">: the sway rotate and the tofu drift now
+   move HTML boxes (compositor only); inside one svg every frame re-laid-out the whole subtree and repainted the
+   band. --it-sp-s is that view box's scale (one old user unit on screen) from the same xMidYMax meet math,
+   min(width / 1440, height / 420); the markup carries --it-sp-x (stem x in the old view box) per wrapper and
+   --it-sp-w / -h / -ty (tofu block size, resting height of its base above the stem base) per tofu. */
 .it-sprouts {
   position: absolute;
   inset-inline: 0;
@@ -239,6 +248,7 @@
   height: min(44vh, 420px);
   z-index: 1;
   pointer-events: none;
+  container-type: inline-size; /* so the wrappers can read this box's width as cqw */
 }
 .it-sprouts .it-stem { fill: none; stroke: var(--it-cream); stroke-width: 1.6; stroke-linecap: round; opacity: 0.35; }
 .it-sprouts .it-sd-leaf {
@@ -272,14 +282,30 @@
   stroke-linecap: round;
 }
 .it-sprout-tofu {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--it-sp-ty) * var(--it-sp-s));
+  width: calc(var(--it-sp-w) * var(--it-sp-s));
+  height: calc(var(--it-sp-h) * var(--it-sp-s));
+  margin-left: calc(var(--it-sp-w) * var(--it-sp-s) / -2);
+  overflow: visible;
+  transform-origin: 50% 100%; /* the block's base, as the old fill-box origin was */
 }
 .it-sway {
-  transform-box: fill-box;
-  transform-origin: 50% 100%;
+  --it-sp-s: min(100cqw / 1440, min(44vh, 420px) / 420);
+  position: absolute;
+  bottom: 0;
+  left: calc(50% + (var(--it-sp-x) - 780) * var(--it-sp-s)); /* stem at 50% + (x - 720) units; the box is 120 wide */
+  width: calc(120 * var(--it-sp-s));
+  /* The pivot, measured on the shipped page rather than read from the old CSS: the <g> had transform-box: fill-box
+     + transform-origin: 50% 100% (the stem base), but with the group's own translate(x 420) attribute Chrome applies
+     that origin in the parent space, so the live sway turns every sprout about the view box's top-left corner
+     (user 0,0): a +-1.1deg tilt plus a slow drift of the whole sprout (up to +-27px for the far right one). Kept so
+     the motion stays identical. For the tilt about the stem base the old CSS meant, use transform-origin: 50% 100%. */
+  transform-origin: calc((60 - var(--it-sp-x)) * var(--it-sp-s)) calc(-270 * var(--it-sp-s));
   animation: it-sway 8s ease-in-out infinite alternate;
 }
+.it-seedling-svg { display: block; width: 100%; height: auto; overflow: visible; }
 .it-sway:nth-child(2) { animation-duration: 9.4s; animation-delay: -2s; }
 .it-sway:nth-child(3) { animation-duration: 7.2s; animation-delay: -4s; }
 .it-sway:nth-child(4) { animation-duration: 10.1s; animation-delay: -1s; }
@@ -403,10 +429,12 @@
   background: var(--it-mint);
   opacity: 0.8;
   flex: none;
-  /* little tofu: periodic squish, anchored to its feet */
+  /* little tofu: periodic squish, anchored to its feet. The squish is a finite animation that motion.js fires on
+     the old schedule (every 3.4s, phase per dot): a twelve-dot infinite loop sat still 82% of the time yet
+     recalculated twelve elements every frame */
   transform-origin: 50% 100%;
-  animation: it-dot-squish 3.4s ease-in-out infinite;
 }
+.it-tofu-dot.is-squish { animation: it-dot-squish-once 0.612s ease-in-out; }
 /* micro-face: two sleepy eyes */
 .it-tofu-dot::before,
 .it-tofu-dot::after {
@@ -420,19 +448,17 @@
 }
 .it-tofu-dot::before { left: 2.6px; }
 .it-tofu-dot::after { right: 2.6px; }
-/* stagger the squishes so the tofus never sync up */
-.it-marquee-list li:nth-child(4) { animation-delay: 0.7s; }
-.it-marquee-list li:nth-child(6) { animation-delay: 1.4s; }
-.it-marquee-list li:nth-child(8) { animation-delay: 2.1s; }
-.it-marquee-list li:nth-child(10) { animation-delay: 2.8s; }
-.it-marquee-list li:nth-child(12) { animation-delay: 3.5s; }
-@keyframes it-dot-squish {
-  0%, 82%, 100% { transform: scale(1, 1); }
-  88% { transform: scale(1.28, 0.68); }
-  94% { transform: scale(0.94, 1.06); }
+/* the stagger (0.7s steps per dot, so the tofus never sync up) lives in motion.js next to the schedule.
+   it-dot-squish-once is the 82 -> 88 -> 94 -> 100% stretch of the old 3.4s loop: 0.204s per segment, the same
+   per-segment ease-in-out */
+@keyframes it-dot-squish-once {
+  0% { transform: scale(1, 1); }
+  33.333% { transform: scale(1.28, 0.68); }
+  66.667% { transform: scale(0.94, 1.06); }
+  100% { transform: scale(1, 1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .it-tofu-dot { animation: none; }
+  .it-tofu-dot, .it-tofu-dot.is-squish { animation: none; }
 }
 @keyframes it-marquee { to { transform: translateX(-50%); } }
 

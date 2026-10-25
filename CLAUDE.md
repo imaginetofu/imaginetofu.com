@@ -216,3 +216,28 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
   reverse scroll always lands (the old toggle tweens killed each other and parked the cube off-screen).
   Act 3 is one continuous sine wave on a scrubbed 0..1 value (`cube._zz` keeps the hero sway ticker off x
   while it settles). Work pages now carry the corner buddy (back to top), initBuddy in case.js.
+
+## Desktop smoothness pass (Oct 25 2026, ultracode: 10 agents, verified pixel-level)
+Friends reported a laggy hero / After Dark on some desktops. Measured CPU-bound (style recalc every frame + canvas
+draw calls), not GPU-bound. Look identical (two verifiers: desktop + phone screenshots, geometry within 0.25px).
+- Lenis raf is a PRIORITIZED gsap.ticker listener (main/case/book): scrollTo lands before the frame's tween writes.
+- initPerf's `.is-off` governor runs on desktop too, CSS-only: off-screen sections pause their CSS animations
+  (running animations at the hero 69 -> 22). GSAP loops are left alone on desktop.
+- Hero sprouts: the single <svg class="it-sprouts"> became five HTML `.it-sway` wrappers, each a static seedling
+  svg + a tofu svg; the CSS sway and the GSAP drift move HTML boxes (no SVG layout per frame; `--it-sp-*` vars).
+  Nav/CTA logo mark = five stacked svg roots. Marquee `.it-tofu-dot` squish is a finite animation fired from
+  motion.js every 3.4s (same keyframes/stagger). `it-stir` only on the em. `.it-cube-stack { will-change }`.
+- Hero motes: trails drawn grouped by colour, then heads (strokeStyle sets 64 -> 3/frame), ImageBitmap sprites;
+  canvas dpr 1.5 on the full tier, 1.25 on phones/strained. Hero video: `pickCodec()` asks
+  mediaCapabilities.decodingInfo and takes hero.mp4 (H.264) when VP9 is not hardware-decoded; phones keep the
+  canPlayType pick. Decision on `.it-hero-video[data-codec][data-codec-why]`.
+- After Dark: ring/mote colours cached, alpha via globalAlpha (pixel-exact), ring + resonance canvases
+  visibility:hidden while empty (no empty screen-blend passes), eyes visibility written on change only.
+- Services tile-art pixel mode: ImageData -> cols x rows canvas -> one nearest-neighbour scaled drawImage + a
+  static gap mask (destination-out): 3 draw calls per tile frame instead of ~2,500 fillRect (edges +-1/255).
+- Desktop tier (perf.js + the inline head script on all 9 pages): html.is-strained before first paint only on
+  hard evidence (Save-Data, 2 cores, software GPU, integrated GPU above 3e6 physical px, 4K-class screen on an
+  unknown GPU); 3-4 cores / <8GB / 4K on a capable GPU are hints that let the frame watch (from 7s) strain after
+  one bad window instead of two. Read `html[data-tier|data-strain|data-strain-hint|data-gpu]`.
+- Numbers (1920x1080, headed, this machine): hero idle main 22.8% -> 14.5%, GPU 37% -> 24%; hero scroll at cpu
+  x6 median 33-50ms -> 17ms; services x4 long frames 45 -> 12; After Dark x4 long frames 51 -> 33.

@@ -12,7 +12,15 @@
    (its cube melts into the trail otherwise) and a cursor light trail.
 
    Tiles autoplay while in view; the motion tile adds a cursor trail on hover.
-   Reduced motion: one static frame, no ticker, no cursor trail. */
+   Reduced motion: one static frame, no ticker, no cursor trail.
+
+   Pixel mode draws in three calls, not one fillRect per cell (Oct 25 2026,
+   desktop smoothness pass): each cell's colour goes into a cols x rows
+   ImageData, that image is scaled up with nearest-neighbour sampling, and
+   a gap mask built once per layout (the 1px gaps between the same
+   (cell - 1px) squares, drawn once) punches the gaps back out with
+   destination-out. Same colours, same squares, same transparent gaps and
+   ground; ~2,500 draw calls per tile frame become 3. */
 
 const TOKENS = {
   ground: [15, 24, 20],
@@ -110,7 +118,10 @@ export function initTileArt({ reduced = false } = {}) {
 
   // width changes only: phone URL-bar collapses fire resize with the same width, and re-laying out three canvases + atlases on each is a hitch
   let lastW = innerWidth;
-  const relayout = () => renders.forEach((R) => R.ready && (layout(R, dpr), draw(R, performance.now(), true)));
+  const relayout = () => {
+    masks.clear(); // gap masks are per size; every live tile rebuilds (or shares) one below
+    renders.forEach((R) => R.ready && (layout(R, dpr), draw(R, performance.now(), true)));
+  };
   addEventListener("resize", () => { if (innerWidth !== lastW) { lastW = innerWidth; relayout(); } }, { passive: true });
   document.fonts?.ready?.then(relayout); // glyph atlas needs the real Space Mono
 
@@ -202,6 +213,7 @@ function layout(R, dpr) {
   R.samp.width = R.cols;
   R.samp.height = R.rows;
   if (R.mode === "ascii") buildAtlas(R, dpr);
+  else buildCells(R, dpr);
 }
 
 // glyph atlas: every glyph in every palette colour, drawn once
@@ -223,6 +235,71 @@ function buildAtlas(R, dpr) {
   );
   R.atlas = atlas;
   R.atlasCell = size;
+}
+
+/* ---------- pixel mode: cell image + gap mask ----------
+   The mosaic used to be one fillRect per lit cell (~2,500 per tile frame at
+   20-30fps, the costliest script work on the page while the services were
+   in view). Now each frame writes the cell colours into a cols x rows
+   ImageData, blits it up with nearest-neighbour sampling (one drawImage)
+   and punches the 1px gaps back out with a gap mask drawn ONCE per layout
+   (destination-out, one drawImage). The mask is the exact same fillRect
+   geometry the old loop used (its squares cut out of an opaque sheet), so
+   edge coverage is unchanged; cells under the floor stay fully transparent
+   because their ImageData alpha is 0. destination-out rather than a cell
+   mask with destination-in on purpose: Blink treats destination-in as a
+   full-canvas composite and wraps every such draw in a whole-canvas layer
+   (an extra full-size copy per tile frame on the GPU); destination-out is
+   a plain blend and draws straight into the canvas. */
+
+// gap masks keyed by canvas size + cell size: the three windows share one
+const masks = new Map();
+
+function buildCells(R, dpr) {
+  if (!R.cellCanvas) {
+    R.cellCanvas = document.createElement("canvas");
+    R.cctx = R.cellCanvas.getContext("2d");
+  }
+  R.cellCanvas.width = R.cols;
+  R.cellCanvas.height = R.rows;
+  R.cells = R.cctx.createImageData(R.cols, R.rows);
+  R.ctx.imageSmoothingEnabled = false; // the up-scale must stay blocky (state was reset with the size)
+  R.mask = maskFor(R, dpr);
+}
+
+function maskFor(R, dpr) {
+  const key = `${R.canvas.width}x${R.canvas.height}/${R.cellPx}/${dpr}`;
+  let m = masks.get(key);
+  if (m) return m;
+  m = document.createElement("canvas");
+  m.width = R.canvas.width;
+  m.height = R.canvas.height;
+  const mc = m.getContext("2d");
+  mc.fillStyle = "#000"; // only its alpha is used: opaque sheet ...
+  mc.fillRect(0, 0, m.width, m.height);
+  mc.setTransform(dpr, 0, 0, dpr, 0, 0);
+  mc.globalCompositeOperation = "destination-out"; // ... with the cells cut out, so what is left is the gaps
+  const cp = R.cellPx, gap = 1;
+  for (let y = 0; y < R.rows; y++)
+    for (let x = 0; x < R.cols; x++) mc.fillRect(x * cp, y * cp, cp - gap, cp - gap);
+  masks.set(key, m);
+  return m;
+}
+
+function blitCells(R, dpr) {
+  const ctx = R.ctx, cp = R.cellPx;
+  R.cctx.putImageData(R.cells, 0, 0);
+  // Nearest-neighbour sampling picks the cell under each device pixel's
+  // centre. Shifted back by half a device pixel, every pixel a cell's
+  // square touches (including its anti-aliased edges) samples that cell,
+  // and the pixel that the next square starts in samples the next cell:
+  // the 1px gap is at least a device pixel wide, so no pixel is shared.
+  ctx.drawImage(R.cellCanvas, 0, 0, R.cols, R.rows, -0.5 / dpr, -0.5 / dpr, R.cols * cp, R.rows * cp);
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.setTransform(1, 0, 0, 1, 0, 0); // the mask is in device pixels: 1:1
+  ctx.drawImage(R.mask, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
 }
 
 function draw(R, now, still) {
@@ -248,7 +325,8 @@ function draw(R, now, still) {
   const sweep = ((t % 9) / 9) * 1.6 - 0.3;
   const cp = R.cellPx;
   const dpr = R.canvas.width / R.w;
-  const gap = R.mode === "pixel" ? 1 : 0;
+  const pixel = R.mode === "pixel";
+  const px = pixel ? R.cells.data : null; // one RGBA per cell, same index as the sample
 
   for (let y = 0; y < R.rows; y++) {
     for (let x = 0; x < R.cols; x++) {
@@ -263,13 +341,16 @@ function draw(R, now, still) {
         const d = nx * 0.6 + ny * 0.4 - sweep;
         L += 0.09 * Math.exp(-(d * d) / 0.012);
       }
-      if (L < R.floor) continue; // ground stays ground
+      if (L < R.floor) { // ground stays ground
+        if (pixel) px[i + 3] = 0;
+        continue;
+      }
       const warm = r - b > 26 && r > g; // the stills' peach glow
       const pal = warm ? WARM : COOL;
       const step = Math.min(pal.length - 1, Math.floor(((L - R.floor) / (1 - R.floor)) * pal.length));
-      if (R.mode === "pixel") {
-        ctx.fillStyle = rgb(pal[step]);
-        ctx.fillRect(x * cp, y * cp, cp - gap, cp - gap);
+      if (pixel) {
+        const c = pal[step];
+        px[i] = c[0]; px[i + 1] = c[1]; px[i + 2] = c[2]; px[i + 3] = 255;
       } else {
         const p = warm ? 1 : 0;
         ctx.drawImage(
@@ -280,6 +361,7 @@ function draw(R, now, still) {
       }
     }
   }
+  if (pixel) blitCells(R, dpr);
   if (R.fx === "tofu") {
     if (!still) drawTrail(R, now);
     drawTofu(R, data, sw, sh, sx, sy, cw, ch, still);

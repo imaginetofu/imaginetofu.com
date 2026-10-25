@@ -267,7 +267,15 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
 
   /* ======================= STARDUST WAKE ======================= */
   const motes = [], MAX = LITE ? 36 : 90;
-  const palette = [{ c: "158,217,191", w: 0.5 }, { c: "241,234,217", w: 0.4 }, { c: "243,181,156", w: 0.1 }];
+  // opaque colour per palette entry; a mote's fade goes through globalAlpha, so each fill no longer builds and
+  // parses its own rgba() string (two per mote per frame before)
+  const palette = [{ c: "rgb(158,217,191)", w: 0.5 }, { c: "rgb(241,234,217)", w: 0.4 }, { c: "rgb(243,181,156)", w: 0.1 }];
+  const CREAM_RGB = "rgb(241,234,217)";
+  // globalAlpha standing in for the alpha that used to sit in an rgba(..., a.toFixed(3)) string: the colour parser
+  // rounds that alpha to 8 bits (round(a * 255) / 255, measured), and the rounding is part of the picture. With
+  // "lighter" a near-invisible 0.002 becomes 1/255 and 160 piled-up strokes light the ring's draw-on seed; a float
+  // 0.002 stores as nothing. So every alpha is snapped to that grid first. Same 3-decimal step, same 8-bit round.
+  const a8 = (a) => Math.round(Math.round(a * 1000) / 1000 * 255) / 255;
   const pick = () => { let r = Math.random(); for (const p of palette) { if ((r -= p.w) <= 0) return p.c; } return palette[0].c; };
   function spawn(cx, cy, size, dx, dy, n) {
     for (let i = 0; i < n && motes.length < MAX; i++) {
@@ -276,17 +284,24 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
         life: 0, ttl: 1.5 + Math.random(), r: 1.4 + Math.random() * 2.2, c: pick(), spark: Math.random() < 0.08 });
     }
   }
+  // the wake canvas is touched only while it holds something: cleared once when the last mote dies, then
+  // left alone (a full-stage clear every frame before, for most of the scene)
+  let trailDirty = false;
   function drawMotes(dt) {
-    ctx.clearRect(0, 0, W, H);
+    if (!motes.length) { if (trailDirty) { ctx.clearRect(0, 0, W, H); trailDirty = false; } return; }
+    ctx.clearRect(0, 0, W, H); trailDirty = true;
+    let style = null;
     for (let i = motes.length - 1; i >= 0; i--) {
       const m = motes[i]; m.life += dt; if (m.life >= m.ttl) { motes.splice(i, 1); continue; }
       m.x += m.vx * dt; m.y += m.vy * dt; m.vx *= 0.985; m.vy *= 0.985;
       const t = m.life / m.ttl, a = (1 - t) * (t < 0.1 ? t / 0.1 : 1);
-      ctx.fillStyle = `rgba(${m.c},${(0.16 * a).toFixed(3)})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.r * 3.2, 0, 6.283); ctx.fill();
-      ctx.fillStyle = `rgba(${m.c},${(0.9 * a).toFixed(3)})`; ctx.beginPath(); ctx.arc(m.x, m.y, m.r * (m.spark ? 0.9 : 0.7), 0, 6.283); ctx.fill();
-      if (m.spark) { ctx.strokeStyle = `rgba(241,234,217,${(0.5 * a).toFixed(3)})`; ctx.lineWidth = 0.8; ctx.beginPath();
+      if (style !== m.c) ctx.fillStyle = style = m.c;
+      ctx.globalAlpha = a8(0.16 * a); ctx.beginPath(); ctx.arc(m.x, m.y, m.r * 3.2, 0, 6.283); ctx.fill();
+      ctx.globalAlpha = a8(0.9 * a); ctx.beginPath(); ctx.arc(m.x, m.y, m.r * (m.spark ? 0.9 : 0.7), 0, 6.283); ctx.fill();
+      if (m.spark) { ctx.globalAlpha = a8(0.5 * a); ctx.strokeStyle = CREAM_RGB; ctx.lineWidth = 0.8; ctx.beginPath();
         ctx.moveTo(m.x - m.r * 2.6, m.y); ctx.lineTo(m.x + m.r * 2.6, m.y); ctx.moveTo(m.x, m.y - m.r * 2.6); ctx.lineTo(m.x, m.y + m.r * 2.6); ctx.stroke(); }
     }
+    ctx.globalAlpha = 1;
   }
 
   /* ======================= DISPERSION SPLIT ======================= */
@@ -344,13 +359,49 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   const mixC = (u, v, k) => [u[0] + (v[0] - u[0]) * k, u[1] + (v[1] - u[1]) * k, u[2] + (v[2] - u[2]) * k];
   const rgba = (c, al) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${al.toFixed(3)})`;
   const TAU = Math.PI * 2, wrap = (v) => ((v % TAU) + TAU) % TAU;
+  // How the ring is drawn (Oct 25): the same strokes in the same order as before. Every segment is still its own
+  // stroke, because the look depends on it: the glow pen is wider than a segment is long, so with "lighter" the
+  // round caps of neighbouring segments pile up into the soft halo; a single batched path would union those caps
+  // and come out several times dimmer. What changed is the bookkeeping around each stroke:
+  //   - a segment's colour is set once as an opaque rgb() shared by the glow and the ribbon, with the alpha in
+  //     globalAlpha (snapped to the parser's 8-bit grid, see a8), and the hairline alpha is worked out once per
+  //     frame: two colour parses per segment instead of three, and no rgba() string built for any of them.
+  //     The ray gradients keep their exact per-stop alpha strings: a gradient's stops are rounded one by one,
+  //     and no single globalAlpha reproduces that;
+  //   - colour strings are cached by their integer rgb, so nothing is rebuilt once a tint has been seen;
+  //   - the point maths runs on scalars instead of a fresh array per segment;
+  //   - both canvases are visibility:hidden while the ring is off (most of the pin): a transparent canvas with
+  //     mix-blend-mode still costs the compositor a screen-blend pass a frame, and screen with nothing is nothing.
+  // Checked pixel for pixel against the old code (same inputs, both canvases, draw-on + steady + draw-off).
+  const colCache = new Map();
+  function colEntry(c) {
+    const r = c[0] | 0, g = c[1] | 0, b = c[2] | 0, key = (r << 16) | (g << 8) | b;   // same truncation as rgba()
+    let e = colCache.get(key);
+    if (!e) {
+      if (colCache.size > 4096) colCache.clear();
+      const s = r + "," + g + "," + b;
+      e = { solid: "rgb(" + s + ")", pre: "rgba(" + s + ",", s0: "rgba(" + s + ",0.000)" };   // s0: what rgba(col, 0) built
+      colCache.set(key, e);
+    }
+    return e;
+  }
+  function ringShow(on) {
+    if (!RING_ON) return;
+    const v = on ? "" : "hidden";
+    if (ring.back.style.visibility !== v) { ring.back.style.visibility = v; ring.front.style.visibility = v; }
+  }
+  ringShow(false);
   function drawRing(p, t) {
     if (!RING_ON) return;
     const r = smooth(ramp(p, RG.in[0], RG.in[1]));
     if (r < 0.001) {
-      if (!ringOff) { ring.b.clearRect(0, 0, ringPx, ringPx); ring.f.clearRect(0, 0, ringPx, ringPx); ringOff = true; }
+      if (!ringOff) { ring.b.clearRect(0, 0, ringPx, ringPx); ring.f.clearRect(0, 0, ringPx, ringPx); ringOff = true; ringShow(false); }
+      // a slow frame can carry the scrub from the comet straight past the draw-off window: without this the
+      // resonance kept lighting station 1 / 2 from a stale head until the next visit to station 3
+      ring.head = null;
       return;
     }
+    if (ringOff) ringShow(true);
     ringOff = false;
     const d = Math.min(devicePixelRatio || 1, LITE || isStrained() ? 1.25 : 1.5), px = Math.round(boxes().tofu * 2.2 * d);
     if (px !== ringPx) { ringPx = px; ring.back.width = ring.back.height = ring.front.width = ring.front.height = px; }
@@ -358,7 +409,9 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     const ox = S / 2 + (RG.cx - 0.5) * U, oy = S / 2 + (RG.cy - 0.5) * U, rx = RG.rx * U, ry = RG.ry * U;
     const ang = (RG.tilt + Math.sin(t * 1.05) * RG.sway) * Math.PI / 180, ca = Math.cos(ang), sa = Math.sin(ang);
     const pt = (th) => { const ex = rx * Math.cos(th), ey = ry * Math.sin(th); return [ox + ex * ca - ey * sa, oy + ex * sa + ey * ca]; };
-    for (const g of [ring.b, ring.f]) { g.clearRect(0, 0, S, S); g.globalCompositeOperation = "lighter"; g.lineCap = "round"; }
+    const gb = ring.b, gf = ring.f;
+    gb.clearRect(0, 0, S, S); gb.globalCompositeOperation = "lighter"; gb.lineCap = "round";
+    gf.clearRect(0, 0, S, S); gf.globalCompositeOperation = "lighter"; gf.lineCap = "round";
     // comet position: locked to the video's travelling light when the synced loop plays, else free-running.
     // Both feed the same eased angle, so switching between them glides instead of jumping.
     const dt = Math.min(0.1, Math.max(0, t - ringLastT)); ringLastT = t; ringFree += dt * RG.lap;
@@ -372,28 +425,36 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     let dd = wrap(target - ringHead); if (dd > Math.PI) dd -= TAU;
     ringHead = wrap(ringHead + dd * (bearing != null ? S3_LIGHT.follow : 0.2));
     const so = smooth(ramp(p, RG.spark[0], RG.spark[1])), head = ringHead, start = 0.35, span = r * TAU;
-    let prev = pt(start);
-    for (let i = 1; i <= RG.N; i++) {
-      const th = start + (i / RG.N) * span, cur = pt(th), mid = th - span / RG.N / 2;
-      const front = Math.sin(mid) > 0, g = front ? ring.f : ring.b, al = r * (front ? 1 : 0.72);
+    const N = RG.N, kGlow = 0.12 * RG.glow, kRib = 0.7 * (0.35 + 0.65 * RG.glow);
+    const alF = r, alB = r * 0.72, hairF = a8(0.18 * alF), hairB = a8(0.18 * alB);   // front / back alpha, hairline alpha per canvas
+    let px0 = ox + rx * Math.cos(start) * ca - ry * Math.sin(start) * sa, py0 = oy + rx * Math.cos(start) * sa + ry * Math.sin(start) * ca;
+    // one segment at a time, in the original order: with anti-aliased coverage "lighter" is dst + cov * (clamp(src + dst) - dst),
+    // so where strokes pile up and saturate (the draw-on seed) the order of the strokes is part of the picture
+    for (let i = 1; i <= N; i++) {
+      const th = start + (i / N) * span, mid = th - span / N / 2;
+      const ex = rx * Math.cos(th), ey = ry * Math.sin(th), cx = ox + ex * ca - ey * sa, cy = oy + ex * sa + ey * ca;
+      const front = Math.sin(mid) > 0, g = front ? gf : gb, al = front ? alF : alB;
       // flowing bands at two speeds, plus the comet's lit wake
       const band = (0.5 + 0.5 * Math.sin(3 * mid - t * RG.flow[0])) * (0.55 + 0.45 * Math.sin(5 * mid + t * RG.flow[1] + 1.7));
       const behind = wrap(head - mid), wake = so * (behind < 1.4 ? Math.pow(1 - behind / 1.4, 2) : 0);
       const I = Math.min(1, 0.22 + 0.78 * Math.pow(band, 0.8) + 0.7 * wake);
       let col = mixC(C_MINT, C_PEACH, 0.5 + 0.5 * Math.sin(2 * mid + t * RG.hueDrift));
       col = mixC(col, C_CREAM, Math.max(0, (I - 0.84) / 0.16) * 0.6);
-      g.beginPath(); g.moveTo(prev[0], prev[1]); g.lineTo(cur[0], cur[1]);
-      g.strokeStyle = rgba(col, 0.12 * RG.glow * I * al); g.lineWidth = U * (0.06 + 0.1 * I); g.stroke();      // soft wide glow
-      g.strokeStyle = rgba(col, 0.7 * (0.35 + 0.65 * RG.glow) * I * al); g.lineWidth = U * (0.008 + 0.022 * I); g.stroke();      // the ribbon
-      g.strokeStyle = rgba(C_CREAM, 0.18 * al); g.lineWidth = U * 0.003; g.stroke();                  // faint glass hairline
-      if (I > 0.34) {                                                                 // curtain ray, screen-vertical
+      const e = colEntry(col);
+      g.beginPath(); g.moveTo(px0, py0); g.lineTo(cx, cy);
+      g.strokeStyle = e.solid;                                                                       // one parse for the glow and the ribbon
+      g.globalAlpha = a8(kGlow * I * al); g.lineWidth = U * (0.06 + 0.1 * I); g.stroke();            // soft wide glow
+      g.globalAlpha = a8(kRib * I * al); g.lineWidth = U * (0.008 + 0.022 * I); g.stroke();           // the ribbon
+      g.strokeStyle = CREAM_RGB; g.globalAlpha = front ? hairF : hairB; g.lineWidth = U * 0.003; g.stroke();   // faint glass hairline
+      if (I > 0.34) {                                                                 // curtain ray, screen-vertical (exact per-stop alphas)
         const h = U * RG.ray * Math.pow(I, 1.6) * (0.6 + 0.4 * Math.sin(t * 1.7 + i * 0.37) * Math.sin(t * 0.6 + i * 0.11));
-        const gr = g.createLinearGradient(cur[0], cur[1], cur[0], cur[1] - h);
-        gr.addColorStop(0, rgba(col, 0.34 * RG.glow * I * al)); gr.addColorStop(0.35, rgba(col, 0.14 * RG.glow * I * al)); gr.addColorStop(1, rgba(col, 0));
-        g.strokeStyle = gr; g.lineWidth = U * 0.02; g.beginPath(); g.moveTo(cur[0], cur[1] - U * 0.01); g.lineTo(cur[0], cur[1] - h); g.stroke();
+        const gr = g.createLinearGradient(cx, cy, cx, cy - h);
+        gr.addColorStop(0, e.pre + (0.34 * RG.glow * I * al).toFixed(3) + ")"); gr.addColorStop(0.35, e.pre + (0.14 * RG.glow * I * al).toFixed(3) + ")"); gr.addColorStop(1, e.s0);
+        g.globalAlpha = 1; g.strokeStyle = gr; g.lineWidth = U * 0.02; g.beginPath(); g.moveTo(cx, cy - U * 0.01); g.lineTo(cx, cy - h); g.stroke();
       }
-      prev = cur;
+      px0 = cx; py0 = cy;
     }
+    gb.globalAlpha = 1; gf.globalAlpha = 1;   // the head and everything after draw at full alpha, as before
     // comet head (only once its stretch of ring has been drawn)
     ring.head = null;
     if (so > 0.01 && wrap(head - start) <= span) {
@@ -427,13 +488,22 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     canvas.parentNode.insertBefore(reso, canvas);        // above backdrop, vignette and seams; below the wake and the creature
     resoCtx = reso.getContext("2d");
   }
+  // hidden while it holds nothing (everything before the comet lights): a transparent full-stage canvas with
+  // mix-blend-mode: screen still costs the compositor a full-screen blend pass every frame
+  function resoShow(on) {
+    if (!RESO_ON) return;
+    const v = on ? "" : "hidden";
+    if (reso.style.visibility !== v) reso.style.visibility = v;
+  }
+  resoShow(false);
   function drawReso(t) {
     if (!RESO_ON) return;
     const h = ring.head, pose = lastPose;
     if (!h || !pose || h.so < 0.01) {
-      if (!resoOff) { resoCtx.clearRect(0, 0, W, H); resoOff = true; }
+      if (!resoOff) { resoCtx.clearRect(0, 0, W, H); resoOff = true; resoShow(false); }
       return;
     }
+    if (resoOff) resoShow(true);
     resoOff = false;
     const rk = LITE || isStrained() ? 0.5 : 1;   // soft glow only: 1x on desktop, half-res on phones (a quarter of the pixels to clear, fill and blend)
     if (reso.width !== Math.round(W * rk) || reso.height !== Math.round(H * rk)) {
@@ -555,7 +625,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   //   canopy: looks up in station 3                           idle: drift + saccades so it never stares
   const GAZE_PX = 0.019;
   const gz = { x: 0, y: 0 };
-  let sacc = { x: 0, y: 0 }, nextSacc = 2;
+  let sacc = { x: 0, y: 0 }, nextSacc = 2, eyesVis = "";
   function gazeTarget(p, t, pos) {
     let gx = gsap.utils.clamp(-1, 1, sp.vx / 520), gy = gsap.utils.clamp(-1, 1, sp.vy / 520);
     const fo = fgC ? fgC.o : 0;
@@ -589,8 +659,8 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
     const widen = 1 + Math.max(0, -gz.y) * 0.10 + jigEyes * 0.22;
     const et = `translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) scaleY(${widen.toFixed(3)})`;
     setTf(eyeL, et); setTf(eyeR, et);
-    const joyOn = performance.now() < joyUntil;
-    eyes.style.visibility = joyOn ? "hidden" : "";
+    const joyOn = performance.now() < joyUntil, ev = joyOn ? "hidden" : "";
+    if (eyesVis !== ev) { eyesVis = ev; eyes.style.visibility = ev; }   // written on change only, not every frame
     peaceTick(p, performance.now());
   }
 

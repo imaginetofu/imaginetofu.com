@@ -79,11 +79,24 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
   const sproutLines = qa(".it-sprouts .it-stem");
   prepDraw(sproutLines);
+  // the sprouts are HTML boxes that CSS places at the old svg view-box scale (--it-sp-s in sections.css, the
+  // xMidYMax meet math of the 1440x420 box). GSAP writes px on the tofu <svg> roots, so every travel that used
+  // to be in old user units is multiplied by that same scale here.
+  const sproutsEl = q(".it-sprouts");
+  let sproutScale = 1;
+  const measureSprouts = () => {
+    if (!sproutsEl) return;
+    const r = sproutsEl.getBoundingClientRect();
+    sproutScale = Math.min(r.width / 1440, r.height / 420) || 1;
+  };
+  measureSprouts();
+  let sprt;
+  addEventListener("resize", () => { clearTimeout(sprt); sprt = setTimeout(measureSprouts, 120); }, { passive: true });
   // start tucked down inside the sprout leaves, scaling up from its base so
   // it climbs OUT of the sprout rather than dropping/bouncing in from above.
   // (SVG viewBox is 1440-wide but scaled to the hero, so the offset is large
   // in user-units to read as a visible rise on screen.)
-  gsap.set(".it-sprout-tofu", { scale: 0, y: 96, transformOrigin: "50% 100%" });
+  gsap.set(".it-sprout-tofu", { scale: 0, y: 96 * sproutScale, transformOrigin: "50% 100%" });
   gsap.set(".it-sd-top", { scale: 0 });
 
   /* ---------------- preloader (counter + rotating words) ---------------- */
@@ -366,7 +379,9 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       )
       .to(
         ".it-hero-sub, .it-hero-actions",
-        { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1 },
+        // clearProps: a leftover inline blur(0px) is a no-op filter the paragraph would otherwise be
+        // composited through on every rotating-word reflow (same pixels without it)
+        { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.9, stagger: 0.1, clearProps: "filter" },
         "go+=0.55"
       )
       .to(".it-scroll-cue", { autoAlpha: 1, duration: 0.6, ease: "power2.out" }, "go+=1.15")
@@ -411,7 +426,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
   if (import.meta.env?.DEV) {
     const replaySprouts = () => {
       gsap.killTweensOf(".it-sprout-tofu");
-      gsap.set(".it-sprout-tofu", { scale: 0, y: 96, transformOrigin: "50% 100%" });
+      gsap.set(".it-sprout-tofu", { scale: 0, y: 96 * sproutScale, transformOrigin: "50% 100%" });
       gsap.set(".it-bubble", { scale: 1, opacity: 0 });
       startBubbleCycle();
     };
@@ -423,11 +438,13 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
   function startTofuFloat() {
     // zero-g drift: composes with the parent .it-sway CSS rotate (do not
-    // kill the sway — GSAP writes the child transform, no conflict)
+    // kill the sway — GSAP writes the child transform, no conflict). The
+    // tofu is an <svg> root, so this is a CSS transform on an HTML box
+    // (compositor), scaled from the old user units by sproutScale.
     qa(".it-sprout-tofu").forEach((tofu, i) => {
       gsap.to(tofu, {
-        x: () => gsap.utils.random(-24, 24),
-        y: () => gsap.utils.random(-38, -14), // upward bias = lift-off
+        x: () => gsap.utils.random(-24, 24) * sproutScale,
+        y: () => gsap.utils.random(-38, -14) * sproutScale, // upward bias = lift-off
         rotation: () => gsap.utils.random(-7, 7), // capped, never a spin
         transformOrigin: "50% 50%",
         duration: () => gsap.utils.random(6, 12),
@@ -504,6 +521,17 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       peach: makeSprite(PEACH),
       cream: makeSprite(CREAM),
     };
+    // drawImage() from a <canvas> source re-snapshots that canvas on every call (~94 per frame here);
+    // an ImageBitmap of the same pixels is drawn as-is. Swapped in once decoded, live particles re-point.
+    if (typeof createImageBitmap === "function") {
+      for (const k of Object.keys(sprites)) {
+        createImageBitmap(sprites[k]).then((bm) => {
+          const old = sprites[k];
+          sprites[k] = bm;
+          for (const p of particles) if (p.sprite === old) p.sprite = bm;
+        }).catch(() => {});
+      }
+    }
 
     const cap = () =>
       matchMedia("(max-width: 899px)").matches
@@ -525,7 +553,9 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     const measure = () => {
       W = hero.clientWidth;
       H = hero.clientHeight;
-      dpr = Math.min(LITE ? 1.25 : 1.5, window.devicePixelRatio || 1);   // phones: soft additive glow, a screen-blended canvas the size of the hero
+      // soft additive glows on a screen-blended canvas the size of the hero: 1.5x on a full-tier desktop,
+      // 1.25x on phones and strained desktops (one third fewer pixels to clear, rasterise and upload)
+      dpr = Math.min(LITE || isStrained() ? 1.25 : 1.5, window.devicePixelRatio || 1);
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -590,12 +620,14 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       p.scale = 0.75 + 0.35 * depth;
     };
 
-    const draw = (p) => {
+    // Trails and heads go in two passes (trails grouped by colour, then heads): "lighter" is additive, so
+    // draw order cannot change a pixel, and it turns 64 strokeStyle + 64 lineCap sets per frame into 3 + 1.
+    // Every segment keeps its own width and alpha: at 60fps a segment is well under a pixel long, so the
+    // stacked round caps ARE the comet smear (one gradient path per trail would draw it 2-3x dimmer).
+    const drawTrail = (p) => {
       const n = p.trail.length;
       if (n < 4) return;
       // fading streak along the spiral path
-      ctx.lineCap = "round";
-      ctx.strokeStyle = p.color;
       for (let i = 2; i < n; i += 2) {
         const k = i / n;
         ctx.globalAlpha = p.alpha * k * 0.65;
@@ -605,12 +637,17 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         ctx.lineTo(p.trail[i], p.trail[i + 1]);
         ctx.stroke();
       }
+    };
+    const drawHead = (p) => {
+      const n = p.trail.length;
+      if (n < 4) return;
       // bright head
       const hx = p.trail[n - 2], hy = p.trail[n - 1];
       ctx.globalAlpha = p.alpha;
       const r = p.size * p.scale * (p.spark ? 4 : 3);
       ctx.drawImage(p.sprite, hx - r, hy - r, r * 2, r * 2);
     };
+    const COLORS = [...new Set([MINT, PEACH, CREAM])];
 
     const drawStars = (now) => {
       const t = now * 0.001;
@@ -631,7 +668,13 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = "lighter";
       drawStars(now);
-      for (const p of particles) { update(p, dt, now); draw(p); }
+      for (const p of particles) update(p, dt, now);
+      ctx.lineCap = "round";
+      for (const c of COLORS) {
+        ctx.strokeStyle = c;
+        for (const p of particles) if (p.color === c) drawTrail(p);
+      }
+      for (const p of particles) drawHead(p);
       rafId = requestAnimationFrame(tick);
     };
 
@@ -693,12 +736,47 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     // mobile now gets the moving vortex too (Dennis, Jul 2026) — the cube
     // is pinned to its base there, so the tip movement is the point.
     // webm is ~1.9MB; reduced-motion users never reach this module at all.
+    // VP9 (webm) is the smaller file, but only the cheaper one where the GPU decodes it: without hardware
+    // VP9 (Intel before Kaby Lake, older AMD, older Macs) the loop is software-decoded on the CPU for the
+    // whole first screen, and the H.264 mp4 (hardware-decoded nearly everywhere) is the lighter pick.
+    // mediaCapabilities.decodingInfo knows which; where the API is missing, the canPlayType pick stands.
+    // The decision is exposed on the element: data-codec = vp9 | h264, data-codec-why = the reason.
+    const pickCodec = async () => {
+      let ext = "webm", why = "vp9";
+      if (!video.canPlayType('video/webm; codecs="vp9"')) { ext = "mp4"; why = "no-vp9"; }
+      else if (navigator.mediaCapabilities?.decodingInfo) {
+        const cfg = LITE
+          ? { contentType: 'video/webm; codecs="vp09.00.31.08"', width: 1280, height: 720, bitrate: 720000, framerate: 24 }
+          : { contentType: 'video/webm; codecs="vp09.00.40.08"', width: 2444, height: 1376, bitrate: 1500000, framerate: 24 };
+        try {
+          // bounded: a slow answer must not hold the hero back (the poster is up; the loop dissolves in when it plays)
+          const info = await Promise.race([
+            navigator.mediaCapabilities.decodingInfo({ type: "file", video: cfg }),
+            new Promise((r) => setTimeout(() => r(null), 400)),
+          ]);
+          if (!info) why = "vp9-timeout";
+          else if (!info.supported) { ext = "mp4"; why = "vp9-unsupported"; }
+          else if (!info.powerEfficient) { ext = "mp4"; why = "vp9-software"; }
+          else why = "vp9-hardware";
+        } catch { why = "vp9-mc-error"; }
+      } else why = "vp9-no-mediacapabilities";
+      video.dataset.codec = ext === "mp4" ? "h264" : "vp9";
+      video.dataset.codecWhy = why;
+      return ext;
+    };
     const tryAttach = async () => {
+      // phones: a 1280x720 re-encode (same frames, about half the bytes, a quarter of the pixels to decode); it ships
+      // with the site, not the CDN. Picked by canPlayType alone, as before: no decode probe on the phone path.
+      if (LITE) {
+        const ext = video.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
+        video.dataset.codec = ext === "mp4" ? "h264" : "vp9";
+        video.dataset.codecWhy = "lite";
+        return "/dream/hero-m." + ext;
+      }
+      const ext = await pickCodec();
       // CDN copy: no HEAD probe (cross-origin, and the file is known to exist); pick by codec support
-      // phones: a 1280x720 re-encode (same frames, about half the bytes, a quarter of the pixels to decode); it ships with the site, not the CDN
-      if (LITE) return video.canPlayType('video/webm; codecs="vp9"') ? "/dream/hero-m.webm" : "/dream/hero-m.mp4";
-      if (MEDIA_BASE) return media(video.canPlayType('video/webm; codecs="vp9"') ? "/dream/hero.webm" : "/dream/hero.mp4");
-      for (const src of ["/dream/hero.webm", "/dream/hero.mp4"]) {
+      if (MEDIA_BASE) return media("/dream/hero." + ext);
+      for (const src of ext === "mp4" ? ["/dream/hero.mp4", "/dream/hero.webm"] : ["/dream/hero.webm", "/dream/hero.mp4"]) {
         try {
           const res = await fetch(src, { method: "HEAD" });
           // require a real video — the dev server serves index.html (200,
@@ -775,9 +853,11 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
   function startHeroLoops() {
     // gentle float — small travel, sine, never a spin.
-    // lives on the inner media so the wrapper's scrub choreography
-    // (xPercent/scale/rotation) never fights it.
-    gsap.to(".it-cube-media", {
+    // lives on the stack inside the figure so the figure's scrub choreography
+    // (xPercent/scale/rotation) never fights it. One box for all three frames
+    // (Oct 25 2026): it used to write three transforms per frame, two of them
+    // on frames that were invisible at the time.
+    gsap.to(".it-cube-stack", {
       y: 10,
       rotation: 1.3,
       duration: 4.4,
@@ -791,7 +871,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
     // surge (brightness reads as light through the screen blend).
     // Random cadence like the buddy's idle pool — alive, not mechanical.
     {
-      const media = qa(".it-cube-media"); // both frames — open + blink squish together
+      const media = qa(".it-cube-stack"); // the shared motion box: open, blink and joy squish together
       const cube = q(".it-cube");
       if (media.length) {
         let jt;         // pending idle timeout
@@ -931,7 +1011,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
 
     // cursor parallax on the hero (fine pointers only)
     if (matchMedia("(pointer: fine)").matches) {
-      const mx = gsap.quickTo(".it-cube-media", "x", { duration: 0.9, ease: "power3" });
+      const mx = gsap.quickTo(".it-cube-stack", "x", { duration: 0.9, ease: "power3" });
       const ax = gsap.quickTo(".it-hero .it-aura", "x", { duration: 1.2, ease: "power3" });
       q(".it-hero")?.addEventListener("pointermove", (e) => {
         const n = e.clientX / innerWidth - 0.5;
@@ -1219,11 +1299,15 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       // pin the cube to the vortex base (video glow) at any aspect ratio —
       // cover-crop shifts the glow around, so CSS %s alone can't hold it
       const heroEl = q(".it-hero");
+      const WIDE_MQ = matchMedia("(min-width: 900px)"); // one live list (the ticker used to build a new one per frame)
+      let heroS = 0; // the hero video's cover-crop scale, refreshed with placeCube (was read from layout every frame)
       const placeCube = () => {
         // resize listeners outlive the matchMedia block — never let the
         // desktop pose stomp the mobile glow-pinned cube
-        if (!heroEl || !matchMedia("(min-width: 900px)").matches) return;
-        const g = glowPoint(heroEl.clientWidth, heroEl.clientHeight);
+        if (!heroEl || !WIDE_MQ.matches) return;
+        const hw = heroEl.clientWidth, hh = heroEl.clientHeight;
+        heroS = Math.max(hw / GLOW.vw, hh / GLOW.vh);
+        const g = glowPoint(hw, hh);
         // cube center sits just above the glow → the glow lights the cube
         // from within and the vortex erupts out of its top face
         const cy = g.y - cube.offsetWidth * 0.1;
@@ -1245,21 +1329,33 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       // scope), synced to the video clock, so it feels physically attached
       // to the stream.
       const vid = q(".it-hero-video");
+      // This runs every frame of the first screen, so (Oct 2026, desktop smoothness pass) it reads nothing
+      // from layout: scrollY / innerHeight / clientWidth each forced a style + layout flush mid-frame, right
+      // after GSAP's writes (the per-frame UpdateLayoutTree in the hero traces), and gsap.set() built a tween
+      // per frame. Now: cached scroll position + viewport height, the hero scale from placeCube, and a
+      // quickSetter with the same 0.05px gate as the mobile ticker. Same x, same cadence.
+      let sy = scrollY, vh = innerHeight;
+      addEventListener("scroll", () => { sy = scrollY; }, { passive: true });
+      addEventListener("resize", () => { vh = innerHeight; }, { passive: true });
+      const setSwayX = gsap.quickSetter(cube, "x", "px");
+      let lastSwayX = 1e9;
       gsap.ticker.add(() => {
-        if (!vid || !vid.currentSrc || vid.paused || !heroEl) return;
+        if (!vid || !vid.currentSrc || vid.paused || !heroEl || !heroS) return;
         // the video now also plays on mobile — this desktop ticker must
         // yield there (the mobile block runs its own with extended-box math)
-        if (!matchMedia("(min-width: 900px)").matches) return;
+        if (!WIDE_MQ.matches) return;
         // sway only matters while the hero is on screen — past it, x belongs
         // to the scroll choreography (this used to stomp it every frame)
-        if (scrollY > innerHeight * 0.9) return;
+        if (sy > vh * 0.9) return;
         const n = TIP_SWAY.length;
         const i = ((vid.currentTime % LOOP_DUR) / LOOP_DUR) * n;
         const a = TIP_SWAY[Math.floor(i) % n];
         const b = TIP_SWAY[Math.ceil(i) % n];
         const off = a + (b - a) * (i - Math.floor(i));
-        const s = Math.max(heroEl.clientWidth / GLOW.vw, heroEl.clientHeight / GLOW.vh);
-        gsap.set(cube, { x: off * GLOW.vw * s * 1.6 }); // ×1.6 = perceptible, still subtle
+        const px = off * GLOW.vw * heroS * 1.6; // ×1.6 = perceptible, still subtle
+        if (Math.abs(px - lastSwayX) < 0.05) return;
+        lastSwayX = px;
+        setSwayX(px);
       });
 
       // hero-out: zoom out, drift aside, rotate −8° → +32° (Δ40°, never 360°).
@@ -2125,6 +2221,19 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       wrap.addEventListener("mouseleave", () =>
         gsap.to(tween, { timeScale: 1, duration: 0.9, ease: "power2.inOut" })
       );
+    }
+    // separator tofus (Oct 25 2026): the squish used to be an infinite 3.4s CSS animation on all twelve dots,
+    // still for 82% of its cycle yet recalculating twelve elements every frame. Now each dot plays a finite
+    // 0.612s animation (the same 82 -> 100% keyframes, sections.css) on the old schedule: first at 2.788s plus
+    // its old nth-child delay (0.7s steps per list), then every 3.4s. About two dots animate at any moment.
+    if (wrap) {
+      const dots = qa(".it-tofu-dot", wrap);
+      const FIRST = 2788, PERIOD = 3400, STAGGER = 700; // ms: 82% of the loop, the loop, the per-dot delay step
+      dots.forEach((dot, i) => {
+        dot.addEventListener("animationend", () => dot.classList.remove("is-squish"));
+        const fire = () => { if (!document.hidden && isOn("marquee")) dot.classList.add("is-squish"); };
+        setTimeout(() => { fire(); setInterval(fire, PERIOD); }, FIRST + (i % 6) * STAGGER);
+      });
     }
   }
 

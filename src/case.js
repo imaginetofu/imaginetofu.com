@@ -40,7 +40,9 @@ let lenis = null;
 if (motion && !TOUCH) {   // touch keeps the browser's own scroll: smoother, and no main-thread smoothing loop
   lenis = new Lenis({ duration: 1.15 });
   lenis.on("scroll", ScrollTrigger.update);
-  gsap.ticker.add((t) => lenis.raf(t * 1000));
+  // prioritized: scroll the window before this frame's tween writes, so scrollTo never forces a
+  // style + layout flush of a dirty page (same ordering as main.js)
+  gsap.ticker.add((t) => lenis.raf(t * 1000), false, true);
   gsap.ticker.lagSmoothing(0);
 }
 

@@ -111,6 +111,20 @@
   <script>document.documentElement.classList.add('js');
     if (matchMedia('(pointer: coarse), (hover: none), (max-width: 899px)').matches) document.documentElement.classList.add('is-lite');
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('reduced');
+    /* desktop tier before first paint (one-way; the rules are documented in src/perf.js). Only hard evidence
+       flips the tier here (Save-Data, a dual-core CPU); softer hints (4 cores, under 8GB, a 4K-class screen) are
+       recorded for perf.js, which weighs them with the GPU and the measured frame rate. */
+    (function (h, n, w) { if (h.classList.contains('is-lite')) { h.dataset.tier = 'lite'; return; }
+      var why = [], hint = []; try { if (!h.classList.contains('reduced')) {
+        if ((n.connection && n.connection.saveData) || matchMedia('(prefers-reduced-data: reduce)').matches) why.push('save-data');
+        if (n.hardwareConcurrency <= 2) why.push('cores'); else if (n.hardwareConcurrency <= 4) hint.push('cores');
+        if (n.deviceMemory <= 4) hint.push('memory');
+        if (w.innerWidth * w.innerHeight * w.devicePixelRatio * w.devicePixelRatio > 6e6) hint.push('px');
+      } } catch (e) {}
+      if (why.length) { h.classList.add('is-strained'); h.dataset.strain = why.join(' '); }
+      if (hint.length) h.dataset.strainHint = hint.join(' ');
+      h.dataset.tier = why.length ? 'strained' : 'full';
+    })(document.documentElement, navigator, window);
     try { if (sessionStorage.getItem('it-px') && !document.documentElement.classList.contains('reduced')) document.documentElement.classList.add('px-in', 'px-arrived'); } catch (e) {}</script>
   <!-- boot guard: paint the ground color before Vite's CSS arrives and keep the
        unstyled page hidden; base.css releases it with a fade (3s failsafe). -->
@@ -134,16 +148,20 @@
   <!-- =============== NAV (case-study variant: back link instead of anchors) =============== -->
   <header class="it-nav is-scrolled" id="it-nav">
     <a class="it-nav-brand" href="/" aria-label="Imagine Tofu, home">
-      <svg class="it-logo-mark" viewBox="4.9 33 106.99 60" aria-hidden="true">
-        <defs>
-          <linearGradient id="itg-case" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
-          </linearGradient>
-        </defs>
-        <g class="it-lm-ring" fill="none" stroke="url(#itg-case)" stroke-width="4" stroke-linecap="round">
-          <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
-        </g>
-        <g class="it-lm-cube">
+      <span class="it-logo-mark" aria-hidden="true">
+        <!-- five stacked <svg> roots (ring, cube, ring-front, spark, spark2): each idle loop animates an HTML box on
+             the compositor; animated <g>s inside one svg re-laid-out and repainted the mark every frame -->
+        <svg class="it-lm-layer it-lm-ring" viewBox="4.9 33 106.99 60">
+          <defs>
+            <linearGradient id="itg-case" x1="0" y1="1" x2="1" y2="0">
+              <stop offset="0" stop-color="#9ED9BF"/><stop offset="1" stop-color="#F3B59C"/>
+            </linearGradient>
+          </defs>
+          <g fill="none" stroke="url(#itg-case)" stroke-width="4" stroke-linecap="round">
+            <path d="M12.30,74.46 A50,18.5 -18 0 1 105.33,44.23" opacity="0.55"/>
+          </g>
+        </svg>
+        <svg class="it-lm-layer it-lm-cube" viewBox="4.9 33 106.99 60">
           <rect x="28" y="35" width="64" height="56" rx="15" fill="#f1ead9"/>
           <g fill="none" stroke="#3a3340" stroke-linecap="round">
             <path d="M43,61.5 Q48.5,55.5 54,61.5" stroke-width="4.5"/>
@@ -152,13 +170,19 @@
           </g>
           <ellipse cx="44" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
           <ellipse cx="76" cy="69.5" rx="3.4" ry="2.1" fill="#F3B59C" opacity="0.9"/>
-        </g>
-        <g class="it-lm-ring-front" fill="none" stroke="url(#itg-case)" stroke-width="4" stroke-linecap="round">
-          <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
-        </g>
-        <path class="it-lm-spark" d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9" opacity="1"/>
-        <path class="it-lm-spark2" d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF" opacity="0.9"/>
-      </svg>
+        </svg>
+        <svg class="it-lm-layer it-lm-ring-front" viewBox="4.9 33 106.99 60">
+          <g fill="none" stroke="url(#itg-case)" stroke-width="4" stroke-linecap="round">
+            <path d="M105.33,44.23 A50,18.5 -18 1 1 12.30,74.46"/>
+          </g>
+        </svg>
+        <svg class="it-lm-layer it-lm-spark" viewBox="4.9 33 106.99 60">
+          <path d="M12.30,69.26 Q13.75,73.00 17.50,74.46 Q13.75,75.91 12.30,79.66 Q10.84,75.91 7.10,74.46 Q10.84,73.00 12.30,69.26Z" fill="#f1ead9"/>
+        </svg>
+        <svg class="it-lm-layer it-lm-spark2" viewBox="4.9 33 106.99 60">
+          <path d="M15.96,64.98 Q16.69,66.86 18.56,67.58 Q16.69,68.31 15.96,70.18 Q15.23,68.31 13.36,67.58 Q15.23,66.86 15.96,64.98Z" fill="#9ED9BF"/>
+        </svg>
+      </span>
       <img class="it-logo-word" src="/brand/logo-wordmark.svg" alt="" width="491" height="109" /></a>
     <nav class="it-nav-links" aria-label="Primary">
       <a href="/#work">← All work</a>
