@@ -539,6 +539,8 @@
 }
 .it-work-head .it-h2 { margin-bottom: 0; }
 .it-work-hint-m { display: none; }
+.it-work-count { display: none; }
+.it-work-foot { display: contents; }
 .it-work-hint {
   font-family: var(--it-font-mono);
   font-size: 0.7rem;
@@ -1940,5 +1942,8 @@ html.js:not(.reduced) #dream > .it-eyebrow,
   .it-work-track::-webkit-scrollbar { display: none; }
   .it-card { width: min(78vw, 380px); scroll-snap-align: start; }
   .it-card:last-child { margin-right: var(--it-gutter); }   /* the teaser can park flush with the gutter */
-  .it-work-progress { display: block; width: min(200px, 44vw); margin-top: 0.25rem; }
+  .it-work-foot { display: flex; align-items: center; gap: 1rem; padding-inline: var(--it-gutter); margin-top: 0.25rem; }
+  .it-work-progress { display: block; width: min(200px, 44vw); margin: 0; }
+  .it-work-count { display: inline-block; font-family: var(--it-font-mono); font-size: 0.7rem; letter-spacing: 0.14em; color: var(--it-cream-50); font-variant-numeric: tabular-nums; }
+  .it-work-count b { font-weight: 400; color: var(--it-peach); }
 }

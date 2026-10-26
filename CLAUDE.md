@@ -226,7 +226,7 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
 Under 900px `.it-work-track` is a native horizontal snap row (sections.css, bottom block): cards `min(78vw, 380px)`,
 `scroll-snap-align: start`, gutter as scroll padding, scrollbar hidden, overscroll contained; the next card peeks in.
 The desktop progress hairline shows on phones too and follows the track's own scroll (motion.js mobile block,
-rAF-gated). "Keep scrolling" hint is desktop-only; `.it-work-hint-m` ("Swipe") is phone-only. Touch cards stay
+rAF-gated) and a "03 / 08" counter (`.it-work-count`, nearest snapped card) sits beside it. "Keep scrolling" hint is desktop-only; `.it-work-hint-m` ("Swipe") is phone-only. Touch cards stay
 poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (first card). Desktop pin untouched.
 
 ## Desktop smoothness pass (Oct 25 2026, ultracode: 10 agents, verified pixel-level)

@@ -1842,7 +1842,18 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       const track = q(".it-work-track"), bar = q(".it-work-progress i");
       if (track && bar) {
         let raf = 0;
-        const draw = () => { raf = 0; const max = track.scrollWidth - track.clientWidth; bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, Math.max(0.04, track.scrollLeft / max)) : 0) + ")"; };
+        const count = q(".it-work-count b"), cards = qa(".it-work-track .it-card");
+        let shown = 1;
+        const draw = () => {
+          raf = 0;
+          const max = track.scrollWidth - track.clientWidth;
+          bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, Math.max(0.04, track.scrollLeft / max)) : 0) + ")";
+          if (count && cards.length > 1) {                     // "03 / 08": the card nearest the snap point
+            const step = cards[1].offsetLeft - cards[0].offsetLeft;
+            const n = Math.min(cards.length, Math.max(1, Math.round(track.scrollLeft / step) + 1));
+            if (n !== shown) { shown = n; count.textContent = String(n).padStart(2, "0"); }
+          }
+        };
         track.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(draw); }, { passive: true });
         draw();
       }
