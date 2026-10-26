@@ -5,7 +5,7 @@
 
 import { CustomEase } from "gsap/CustomEase";
 import { media, MEDIA_BASE } from "./media.js";
-import { isOn, LITE, GECKO, isStrained } from "./perf.js";
+import { IOS, isOn, LITE, GECKO, isStrained } from "./perf.js";
 
 // the hero cube is position:fixed and rides on into Hello, so its idle loops stay alive for both
 const cubeOn = () => isOn("hero") || isOn("intro");
@@ -768,9 +768,9 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       // phones: a 1280x720 re-encode (same frames, about half the bytes, a quarter of the pixels to decode); it ships
       // with the site, not the CDN. Picked by canPlayType alone, as before: no decode probe on the phone path.
       if (LITE) {
-        const ext = video.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
+        const ext = !IOS && video.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
         video.dataset.codec = ext === "mp4" ? "h264" : "vp9";
-        video.dataset.codecWhy = "lite";
+        video.dataset.codecWhy = IOS ? "ios" : "lite";
         return "/dream/hero-m." + ext;
       }
       const ext = await pickCodec();

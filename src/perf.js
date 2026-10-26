@@ -22,6 +22,9 @@ if (LITE) document.documentElement.classList.add("is-lite");
 // no redraw), scroll-scrubbed parallax is dropped, and loops that repaint every frame are paused.
 // Chrome / Safari / desktop are untouched.
 export const GECKO = LITE && navigator.userAgent.includes("Firefox/");
+// iPhone / iPad (every iOS browser is WebKit; iPadOS reports a Mac UA with touch points). Their hardware video
+// decoder is H.264 / HEVC: WebM (VP9) plays, but on older models it is decoded on the CPU, so iOS gets the mp4s.
+export const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.userAgent.includes("Macintosh") && navigator.maxTouchPoints > 1);
 if (GECKO) document.documentElement.classList.add("is-gecko");
 
 const SECTIONS = [

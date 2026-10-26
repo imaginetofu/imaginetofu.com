@@ -5,7 +5,7 @@
    path keeps the .it-dream-duo fallback in index.html. */
 
 import { media } from "./media.js";
-import { LITE, isStrained } from "./perf.js";
+import { LITE, TOUCH, IOS, isStrained } from "./perf.js";
 
 const q = (s, c = document) => c.querySelector(s);
 
@@ -666,10 +666,27 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
 
   /* ======================= BACKDROP CONDUCTOR ======================= */
   let progress = 0;
-  ScrollTrigger.create({
-    trigger: scene, start: "top top", end: SCORE.PIN, pin: true, scrub: 0.5, anticipatePin: 1, invalidateOnRefresh: true,
-    onUpdate(s) { progress = s.progress; },
-  });
+  if (TOUCH) {
+    // Touch screens (Oct 26 2026, iPhone 12 report: "it keeps trying to scroll, then scrolls back to stop us
+    // there"). A ScrollTrigger pin swaps the stage to position:fixed from script, but iOS runs its momentum
+    // scroll outside the page's script, so the hand-off lands a frame late and the page tugs back. Here the
+    // browser holds the stage itself: the scene is as tall as the old pin spacer (stage + 5.4 screens) and the
+    // stage is position:sticky inside it. Same scroll length, same progress, no script in the gesture.
+    const dist = () => Math.round(innerHeight * 5.4);
+    const size = () => { scene.style.height = (stage.offsetHeight + dist()) + "px"; };
+    scene.classList.add("is-sticky");
+    size();
+    ScrollTrigger.addEventListener("refreshInit", size);
+    ScrollTrigger.create({
+      trigger: scene, start: "top top", end: () => "+=" + dist(), scrub: 0.5, invalidateOnRefresh: true,
+      onUpdate(s) { progress = s.progress; },
+    });
+  } else {
+    ScrollTrigger.create({
+      trigger: scene, start: "top top", end: SCORE.PIN, pin: true, scrub: 0.5, anticipatePin: 1, invalidateOnRefresh: true,
+      onUpdate(s) { progress = s.progress; },
+    });
+  }
 
   let lastCardsIn = 0;
   const playing = {};
@@ -695,6 +712,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       if (playing[v.id]) { v.pause(); playing[v.id] = false; }
       v.poster = src + ".webp";
       v.querySelectorAll("source").forEach((s) => { s.src = media(src + (s.type === "video/webm" ? ".webm" : ".mp4")); });
+      if (IOS) { const mp4 = v.querySelector('source[type="video/mp4"]'); if (mp4 && mp4 !== v.firstElementChild) v.prepend(mp4); }   // H.264 is the iPhone's hardware decoder
       v.dataset.dgSrc = src;
       v.dataset.dgReload = "1";                   // want() re-runs source selection right before the first play;
     });                                           // calling load() here would start fetching on page load

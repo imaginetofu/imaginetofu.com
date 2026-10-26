@@ -229,6 +229,15 @@ The desktop progress hairline shows on phones too and follows the track's own sc
 rAF-gated) and a "03 / 08" counter (`.it-work-count`, nearest snapped card) sits beside it. "Keep scrolling" hint is desktop-only; `.it-work-hint-m` ("Swipe") is phone-only. Touch cards stay
 poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (first card). Desktop pin untouched.
 
+## Touch + iOS fixes (Oct 26 2026, iPhone 12 report)
+- After Dark on touch screens (`TOUCH`, coarse pointer) is NOT a ScrollTrigger pin: iOS momentum scrolling runs
+  outside the page's script, so a JS pin handing the stage to position:fixed landed late and tugged the page back
+  ("keeps trying to scroll then scrolls back"). dream-glass.js sizes `.it-dream-scene.is-sticky` to stage height +
+  5.4 screens (refreshInit) and the stage is `position: sticky; top: 0` (dream-glass.css); the ScrollTrigger keeps
+  the same start/end without `pin`. Page height and every later section are unchanged. Desktop keeps the pin.
+- `IOS` (perf.js: iPhone/iPad UA, or Mac UA with touch points): the phone hero takes hero-m.mp4 and the After Dark
+  station loops put their mp4 <source> first. VP9 WebM plays on iOS but older iPhones decode it on the CPU.
+
 ## Desktop smoothness pass (Oct 25 2026, ultracode: 10 agents, verified pixel-level)
 Friends reported a laggy hero / After Dark on some desktops. Measured CPU-bound (style recalc every frame + canvas
 draw calls), not GPU-bound. Look identical (two verifiers: desktop + phone screenshots, geometry within 0.25px).
