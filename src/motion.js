@@ -1836,6 +1836,17 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       }
     }
 
+    // the work gallery is a native snap row on phones (sections.css): the progress hairline follows the swipe,
+    // one transform per frame at most, read from the track's own scroll (passive, rAF-gated)
+    {
+      const track = q(".it-work-track"), bar = q(".it-work-progress i");
+      if (track && bar) {
+        let raf = 0;
+        const draw = () => { raf = 0; const max = track.scrollWidth - track.clientWidth; bar.style.transform = "scaleX(" + (max > 0 ? Math.min(1, Math.max(0.04, track.scrollLeft / max)) : 0) + ")"; };
+        track.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(draw); }, { passive: true });
+        draw();
+      }
+    }
     if (GECKO) qa(".it-card").forEach((c) => c.classList.add("gk-card"));
     else gsap.set(".it-card", { autoAlpha: 0, y: 40 });
     ScrollTrigger.batch(".it-card", {

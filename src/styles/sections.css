@@ -538,6 +538,7 @@
   padding-inline: var(--it-gutter);
 }
 .it-work-head .it-h2 { margin-bottom: 0; }
+.it-work-hint-m { display: none; }
 .it-work-hint {
   font-family: var(--it-font-mono);
   font-size: 0.7rem;
@@ -1912,4 +1913,32 @@ html.js:not(.reduced) #dream > .it-eyebrow,
 
   /* micro line wraps evenly instead of leaving "conversation" alone */
   .it-cta-micro { letter-spacing: 0.12em; text-wrap: balance; }
+}
+
+/* ---------- phones: the work gallery is a swipe row, not a stack (Dennis, Oct 26 2026) ----------
+   Native horizontal scroll with snap points (compositor-driven, no JS in the gesture), each card about
+   four fifths of the screen so the next one peeks in from the right; the desktop progress hairline doubles as
+   the swipe position (motion.js, mobile block). Vertical page scroll is untouched. */
+@media (max-width: 899px) {
+  .it-work-pin { overflow: visible; }
+  .it-work-head { margin-bottom: 0.25rem; }
+  .it-work-hint-m { display: block; }
+  .it-work-track {
+    flex-direction: row;
+    gap: 0.85rem;
+    padding-inline: var(--it-gutter);   /* the track is already full-bleed; the gutter is its own padding */
+    padding-block: 0.25rem 0.75rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--it-gutter);
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    will-change: auto;
+  }
+  .it-work-track::-webkit-scrollbar { display: none; }
+  .it-card { width: min(78vw, 380px); scroll-snap-align: start; }
+  .it-card:last-child { margin-right: var(--it-gutter); }   /* the teaser can park flush with the gutter */
+  .it-work-progress { display: block; width: min(200px, 44vw); margin-top: 0.25rem; }
 }

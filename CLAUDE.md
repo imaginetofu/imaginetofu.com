@@ -222,6 +222,13 @@ Pixel 10 Pro report: choppy scroll. Fixed without changing the look; desktop unt
   Act 3 is one continuous sine wave on a scrubbed 0..1 value (`cube._zz` keeps the hero sway ticker off x
   while it settles). Work pages now carry the corner buddy (back to top), initBuddy in case.js.
 
+## Phones: work gallery is a swipe row (Oct 26 2026, Dennis)
+Under 900px `.it-work-track` is a native horizontal snap row (sections.css, bottom block): cards `min(78vw, 380px)`,
+`scroll-snap-align: start`, gutter as scroll padding, scrollbar hidden, overscroll contained; the next card peeks in.
+The desktop progress hairline shows on phones too and follows the track's own scroll (motion.js mobile block,
+rAF-gated). "Keep scrolling" hint is desktop-only; `.it-work-hint-m` ("Swipe") is phone-only. Touch cards stay
+poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (first card). Desktop pin untouched.
+
 ## Desktop smoothness pass (Oct 25 2026, ultracode: 10 agents, verified pixel-level)
 Friends reported a laggy hero / After Dark on some desktops. Measured CPU-bound (style recalc every frame + canvas
 draw calls), not GPU-bound. Look identical (two verifiers: desktop + phone screenshots, geometry within 0.25px).
