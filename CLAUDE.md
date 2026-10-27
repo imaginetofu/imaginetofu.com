@@ -238,6 +238,24 @@ poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (fir
 - `IOS` (perf.js: iPhone/iPad UA, or Mac UA with touch points): the phone hero takes hero-m.mp4 and the After Dark
   station loops put their mp4 <source> first. VP9 WebM plays on iOS but older iPhones decode it on the CPU.
 
+## Load-speed pass (Oct 27 2026, speed tests)
+Measured cold loads (Lighthouse throttling: phone slow-4G + 4x CPU, desktop 10Mbps). Phone home LCP 12.5s -> 2.7s,
+load 17.6s -> 4.7s, first-6s bytes 3.5MB -> 1.4MB; booking CLS 0.40 -> 0.000.
+- After Dark art was downloading at page load (fg-bloom 713KB, station posters incl. the DESKTOP ones on phones,
+  creature faces), racing the hero. Now: station videos carry `data-poster` (setPosters picks the phone/desktop cut),
+  the faces + bloom carry `data-src` (loadArt), both fired 1.5s after window load or 4 screens before the scene,
+  whichever first (not loading="lazy": the bloom waits off-screen to the side). Faces resized 1024 -> 512 (drawn
+  <= 500 device px anywhere; 110KB -> 36KB each); originals in notes/backup-dream-art-2026-10-27/.
+- GA (gtag.js, 175KB) is injected on load, first scroll/tap/key, or 4s after DOMContentLoaded (all 9 pages);
+  gtag() calls before that queue in dataLayer.
+- Booking page font request lacked Bricolage (its title rendered in Segoe UI); added.
+- tokens.css: metric-matched fallback faces ("Bricolage Fallback" / "Fraunces Fallback" / "Hanken Fallback": local
+  Arial / Georgia Italic with size-adjust + ascent/descent overrides, unicode-range = Google's latin range) in the
+  font stacks, so titles wrap the same before and after the web fonts swap in. Verified final layout unchanged on
+  home and case pages (0 element boxes differ).
+- Test gotcha: a Steam game (GoWEDay) was eating ~11 threads during the first scroll runs; check machine load
+  (Get-Counter) before trusting throttled frame numbers.
+
 ## Still mode + phone camera moves (Oct 26 2026, Dennis)
 - Video vs image sequence: time-based loops stay VIDEO (inter-frame compression + hardware decode; the same loop as
   WebP frames would be ~8x the bytes and hundreds of MB decoded). Sequences only where scroll drives the frame: the

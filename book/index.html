@@ -53,8 +53,8 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&family=Fraunces:ital,opsz,wght@1,9..144,400..700&family=Hanken+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" /></noscript>
   <link rel="preconnect" href="https://tidycal.com" />
 
   <script>document.documentElement.classList.add('js');
@@ -83,7 +83,7 @@
     @keyframes it-boot-show { to { opacity: 1; } }
   </style>
   <!-- Google Analytics 4: property "Imagine TOFU" (same web stream as the old WordPress site, so history continues) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1"></script>
+  <script>/* GA loads after the page's own startup: on load, the first scroll / tap / key, or 4s after parsing, whichever is first. Calls made before then queue in dataLayer and send when it arrives. */(function(){var d=0,go=function(){if(d)return;d=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1';document.head.appendChild(s);};addEventListener('load',function(){setTimeout(go,300);});['scroll','pointerdown','keydown','touchstart'].forEach(function(e){addEventListener(e,go,{once:true,passive:true});});document.addEventListener('DOMContentLoaded',function(){setTimeout(go,4000);});})();</script>
   <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-SNMZB43GC1');</script>
   <script>/* leads: "Book a call" and email clicks count as GA4 generate_lead (method = book_call | email) */
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (!a) return; var h = a.getAttribute('href') || '';

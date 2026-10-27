@@ -197,7 +197,7 @@
     @keyframes it-boot-show { to { opacity: 1; } }
   </style>
   <!-- Google Analytics 4: property "Imagine TOFU" (same web stream as the old WordPress site, so history continues) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1"></script>
+  <script>/* GA loads after the page's own startup: on load, the first scroll / tap / key, or 4s after parsing, whichever is first. Calls made before then queue in dataLayer and send when it arrives. */(function(){var d=0,go=function(){if(d)return;d=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1';document.head.appendChild(s);};addEventListener('load',function(){setTimeout(go,300);});['scroll','pointerdown','keydown','touchstart'].forEach(function(e){addEventListener(e,go,{once:true,passive:true});});document.addEventListener('DOMContentLoaded',function(){setTimeout(go,4000);});})();</script>
   <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-SNMZB43GC1');</script>
   <script>/* leads: "Book a call" and email clicks count as GA4 generate_lead (method = book_call | email) */
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (!a) return; var h = a.getAttribute('href') || '';
@@ -820,16 +820,16 @@
              with scrubbed transitions between them; tofu rides the path on a
              spring (src/dream-glass.js). Mobile / reduced use the .it-dream-duo below. -->
         <div class="it-dream-stage">
-          <video class="it-dg-bd it-dg-bd--s1" loop muted playsinline preload="none" poster="/dream/glass/station1.webp" aria-hidden="true">
+          <video class="it-dg-bd it-dg-bd--s1" loop muted playsinline preload="none" data-poster="/dream/glass/station1.webp" aria-hidden="true">
             <source src="%VITE_MEDIA_BASE%/dream/glass/station1.webm" type="video/webm" /><source src="%VITE_MEDIA_BASE%/dream/glass/station1.mp4" type="video/mp4" /></video>
-          <video class="it-dg-bd it-dg-bd--s2" loop muted playsinline preload="none" poster="/dream/glass/station2.webp" aria-hidden="true">
+          <video class="it-dg-bd it-dg-bd--s2" loop muted playsinline preload="none" data-poster="/dream/glass/station2.webp" aria-hidden="true">
             <source src="%VITE_MEDIA_BASE%/dream/glass/station2.webm" type="video/webm" /><source src="%VITE_MEDIA_BASE%/dream/glass/station2.mp4" type="video/mp4" /></video>
-          <video class="it-dg-bd it-dg-bd--s3" loop muted playsinline preload="none" poster="/dream/glass/station3.webp" aria-hidden="true">
+          <video class="it-dg-bd it-dg-bd--s3" loop muted playsinline preload="none" data-poster="/dream/glass/station3.webp" aria-hidden="true">
             <source src="%VITE_MEDIA_BASE%/dream/glass/station3.webm" type="video/webm" /><source src="%VITE_MEDIA_BASE%/dream/glass/station3.mp4" type="video/mp4" /></video>
           <!-- scrubbed transitions: keyframe every 3 frames so every seek lands -->
-          <video class="it-dg-bd it-dg-bd--ta" muted playsinline preload="none" poster="/dream/glass/station1.webp" aria-hidden="true">
+          <video class="it-dg-bd it-dg-bd--ta" muted playsinline preload="none" aria-hidden="true">
             <source src="%VITE_MEDIA_BASE%/dream/glass/trans-1-2.webm" type="video/webm" /><source src="%VITE_MEDIA_BASE%/dream/glass/trans-1-2.mp4" type="video/mp4" /></video>
-          <video class="it-dg-bd it-dg-bd--tb" muted playsinline preload="none" poster="/dream/glass/station2.webp" aria-hidden="true">
+          <video class="it-dg-bd it-dg-bd--tb" muted playsinline preload="none" aria-hidden="true">
             <source src="%VITE_MEDIA_BASE%/dream/glass/trans-2-3.webm" type="video/webm" /><source src="%VITE_MEDIA_BASE%/dream/glass/trans-2-3.mp4" type="video/mp4" /></video>
           <div class="it-dg-vignette" aria-hidden="true"></div>
           <div class="it-dg-edge it-dg-edge--top" aria-hidden="true"></div>
@@ -842,14 +842,14 @@
             <div class="it-dg-body">
               <div class="it-dg-ghost it-dg-ghost--mint"></div>
               <div class="it-dg-ghost it-dg-ghost--peach"></div>
-              <img class="it-dg-face" src="/dream/glass/tofu-base.webp" alt="" width="1024" height="1024" decoding="async" />
+              <img class="it-dg-face" data-src="/dream/glass/tofu-base.webp" alt="" width="1024" height="1024" decoding="async" />
               <div class="it-dg-eyes"><div class="it-dg-eye it-dg-eye--l"></div><div class="it-dg-eye it-dg-eye--r"></div></div>
-              <img class="it-dg-face it-dg-face--blink" src="/dream/glass/tofu-blink.webp" alt="" width="1024" height="1024" decoding="async" />
-              <img class="it-dg-face it-dg-face--joy" src="/dream/glass/tofu-joy.webp" alt="" width="1024" height="1024" decoding="async" />
+              <img class="it-dg-face it-dg-face--blink" data-src="/dream/glass/tofu-blink.webp" alt="" width="1024" height="1024" decoding="async" />
+              <img class="it-dg-face it-dg-face--joy" data-src="/dream/glass/tofu-joy.webp" alt="" width="1024" height="1024" decoding="async" />
             </div>
           </div>
 
-          <div class="it-dg-fg" aria-hidden="true"><img src="/dream/glass/fg-bloom.webp" alt="" width="1400" height="1400" decoding="async" /></div>
+          <div class="it-dg-fg" aria-hidden="true"><img data-src="/dream/glass/fg-bloom.webp" alt="" width="1400" height="1400" decoding="async" /></div>
 
           <div class="it-dg-copy it-dg-copy--1">
             <p class="it-eyebrow">After dark</p>

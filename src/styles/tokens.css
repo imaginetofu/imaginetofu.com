@@ -1,3 +1,18 @@
+/* Metric-matched stand-ins (Oct 27 2026). Until the web fonts arrive the page lays out in a local font scaled to the
+   real one's width, so headings break onto the same lines and nothing jumps when the fonts swap in (the booking
+   title used to wrap to two lines in Georgia/Arial, then snap to one: CLS 0.39). Values measured in Chrome against
+   the site's own copy at the real weights (Bricolage 460, Fraunces italic 460, Hanken 400). Each stand-in covers
+   exactly the web font's (Google latin) range, so any other character falls back the way it always did. */
+@font-face { font-family: "Bricolage Fallback"; src: local("Arial"), local("ArialMT"), local("Helvetica Neue"), local("Helvetica"), local("Roboto");
+  size-adjust: 93.5%; ascent-override: 99.5%; descent-override: 28.9%; line-gap-override: 0%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Fraunces Fallback"; font-style: italic; src: local("Georgia Italic"), local("Georgia-Italic");
+  size-adjust: 81.1%; ascent-override: 120.8%; descent-override: 32.1%; line-gap-override: 0%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Hanken Fallback"; src: local("Arial"), local("ArialMT"), local("Helvetica Neue"), local("Helvetica"), local("Roboto");
+  size-adjust: 100.7%; ascent-override: 99.3%; descent-override: 29.8%; line-gap-override: 0%;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
 /* Imagine TOFU — brand tokens. Single source of truth.
    Do not add colors outside this set. */
 
@@ -10,9 +25,9 @@
   --it-eye-dark: #3a3340;
 
   /* type */
-  --it-font-display: "Bricolage Grotesque", system-ui, sans-serif;
-  --it-font-accent: "Fraunces", Georgia, serif; /* italic accent words + eyebrows only */
-  --it-font-body: "Hanken Grotesk", system-ui, sans-serif;
+  --it-font-display: "Bricolage Grotesque", "Bricolage Fallback", system-ui, sans-serif;
+  --it-font-accent: "Fraunces", "Fraunces Fallback", Georgia, serif; /* italic accent words + eyebrows only */
+  --it-font-body: "Hanken Grotesk", "Hanken Fallback", system-ui, sans-serif;
   --it-font-mono: "Space Mono", ui-monospace, monospace;
 
   /* motion (anti-cheese constraints) */

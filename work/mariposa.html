@@ -134,7 +134,7 @@
     @keyframes it-boot-show { to { opacity: 1; } }
   </style>
   <!-- Google Analytics 4: property "Imagine TOFU" (same web stream as the old WordPress site, so history continues) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1"></script>
+  <script>/* GA loads after the page's own startup: on load, the first scroll / tap / key, or 4s after parsing, whichever is first. Calls made before then queue in dataLayer and send when it arrives. */(function(){var d=0,go=function(){if(d)return;d=1;var s=document.createElement('script');s.async=true;s.src='https://www.googletagmanager.com/gtag/js?id=G-SNMZB43GC1';document.head.appendChild(s);};addEventListener('load',function(){setTimeout(go,300);});['scroll','pointerdown','keydown','touchstart'].forEach(function(e){addEventListener(e,go,{once:true,passive:true});});document.addEventListener('DOMContentLoaded',function(){setTimeout(go,4000);});})();</script>
   <script>window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'G-SNMZB43GC1');</script>
   <script>/* leads: "Book a call" and email clicks count as GA4 generate_lead (method = book_call | email) */
   document.addEventListener('click', function (e) { var a = e.target.closest && e.target.closest('a[href]'); if (!a) return; var h = a.getAttribute('href') || '';

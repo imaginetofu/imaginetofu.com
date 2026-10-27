@@ -716,6 +716,24 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   // scrubbed transitions are never fetched: each becomes a slow dissolve between station loops
   // instead (1→2 pushes in, 2→3 rises). Desktop is unchanged.
   const phoneMQ = matchMedia("(max-width: 899px)");
+  // Station posters are not in the HTML (Oct 27 2026): as poster attributes they downloaded at page load, the
+  // desktop cut even on phones (~740KB racing the hero on a slow connection). They are set here, in the right
+  // cut, once the scene is four screens away, and again whenever the cut changes.
+  function setPosters(isPhone) {
+    ["s1", "s2", "s3"].forEach((k, i) => {
+      const v = vids[k]; if (!v) return;
+      const want = (isPhone ? "/dream/glass/mobile/station" : "/dream/glass/station") + (i + 1) + ".webp";
+      if (v.getAttribute("poster") !== want) v.poster = want;
+    });
+  }
+  // the creature's faces and the foreground bloom load on the same approach (not lazy="loading": the bloom waits
+  // off-screen to the side, where a lazy image may not be fetched until it is already sweeping in)
+  const loadArt = () => stage.querySelectorAll("img[data-src]").forEach((im) => { im.src = im.dataset.src; im.removeAttribute("data-src"); });
+  // ...and in the background once the page itself has finished loading (1.5s after load), so a fast scroller on a
+  // slow phone still finds it ready; whichever comes first. Never in the hero's critical path.
+  const early = () => setTimeout(() => { setPosters(mobile); loadArt(); }, 1500);
+  if (document.readyState === "complete") early(); else addEventListener("load", early, { once: true });
+  ScrollTrigger.create({ trigger: scene, start: "top 400%", once: true, onEnter: () => { setPosters(mobile); loadArt(); } });
   function setLoopSources(isPhone) {
     const base = isPhone ? "/dream/glass/mobile/station" : "/dream/glass/station";
     ["s1", "s2", "s3"].forEach((k, i) => {
@@ -724,7 +742,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       if (!v.dataset.dgSrc) v.dataset.dgSrc = "/dream/glass/station" + (i + 1);   // what index.html ships
       if (v.dataset.dgSrc === src) return;
       if (playing[v.id]) { v.pause(); playing[v.id] = false; }
-      v.poster = src + ".webp";
+      v.poster = src + ".webp";   // (setPosters covers the desktop cut, which ships as these same paths)
       v.querySelectorAll("source").forEach((s) => { s.src = media(src + (s.type === "video/webm" ? ".webm" : ".mp4")); });
       if (IOS) { const mp4 = v.querySelector('source[type="video/mp4"]'); if (mp4 && mp4 !== v.firstElementChild) v.prepend(mp4); }   // H.264 is the iPhone's hardware decoder
       v.dataset.dgSrc = src;
@@ -733,6 +751,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   }
   phoneMQ.addEventListener("change", (e) => {
     mobile = e.matches; if (active) setLoopSources(mobile);
+    if (scene.getBoundingClientRect().top < innerHeight * 4) setPosters(mobile);
     seqA.setVariant(mobile); seqB.setVariant(mobile); warmed = false;
     gsap.set([vids.s1, vids.s2, vids.s3], { scale: 1, yPercent: 0 }); lastSet = new WeakMap(); cxCache.clear();
     if (!mobile && active) warm();
@@ -836,7 +855,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   // creature, ring and station-3 loop froze mid-exit.)
   ScrollTrigger.create({ trigger: scene, start: "top 120%", end: () => "+=" + Math.round(innerHeight * (1.2 + 5.4) + stage.getBoundingClientRect().height + 40), invalidateOnRefresh: true,
     onToggle(s) { active = s.isActive;
-      if (active) { setLoopSources(mobile); warm(); } else { want(vids.s1, false); want(vids.s2, false); want(vids.s3, false); } } });
+      if (active) { setPosters(mobile); loadArt(); setLoopSources(mobile); warm(); } else { want(vids.s1, false); want(vids.s2, false); want(vids.s3, false); } } });
   // the transitions are preload="none" (weight): nothing fetches until the scene is near, then we
   // load them ourselves and seek to the first frame so a decoded frame exists before the hand-off
   const primed = {};
