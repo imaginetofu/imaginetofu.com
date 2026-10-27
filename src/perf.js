@@ -67,6 +67,18 @@ const doc = document.documentElement;
 let strained = !LITE && doc.classList.contains("is-strained");   // the <head> script may have decided already
 const HINT = (doc.dataset.strainHint || "").split(" ").filter(Boolean);
 export const isStrained = () => strained;
+
+/* ---------- still mode (Oct 26 2026) ----------
+   On a machine that struggles, the background FOOTAGE holds still: the hero loop and the three After Dark station
+   loops show their poster frames, while everything scroll-driven keeps moving (the After Dark camera moves are
+   image sequences, the creature, ring and particles are canvas). Zero video decoding where it hurts most.
+   On when: the desktop is strained (any reason above), or a phone has Save-Data on, 2GB of memory or 4 cores or
+   fewer, or the frame watch catches the phone dropping frames. The hero only goes still on what is known at load
+   (it is the first thing on screen; a loop that stops mid-view would read as a glitch). html[data-still] says why. */
+export const SAVE_DATA = (() => { try { return !!(navigator.connection && navigator.connection.saveData) || matchMedia("(prefers-reduced-data: reduce)").matches; } catch (e) { return false; } })();
+let phoneStill = LITE && (SAVE_DATA || navigator.deviceMemory <= 2 || navigator.hardwareConcurrency <= 4);
+export const stillMode = () => strained || phoneStill;
+function markStill() { doc.dataset.still = doc.dataset.still || (phoneStill ? "phone" : "strained"); }
 function strain(why) {
   if (LITE) return;
   strained = true;
@@ -103,9 +115,11 @@ if (!LITE && !strained && !doc.classList.contains("reduced") && document.querySe
   else if (g === "igpu" && px > 3e6) strain("gpu-igpu");
   else if (HINT.includes("px") && g !== "capable") strain("px");
 }
+if (stillMode()) markStill();
 export function initFrameWatch() {
-  if (LITE || strained || !("requestAnimationFrame" in window)) return;
-  const need = HINT.length ? 1 : 2;   // a hinted machine gets one strike, any other two (a single hitch is not evidence)
+  if (!("requestAnimationFrame" in window) || (LITE ? phoneStill : strained)) return;
+  // phones run the same watch, but it only switches on still mode (their effects are already the lite ones)
+  const need = !LITE && HINT.length ? 1 : 2;   // a hinted desktop gets one strike, anything else two
   let last = 0, buf = [], bad = 0;
   const tick = (t) => {
     const d = last ? t - last : 0; last = t;
@@ -114,7 +128,7 @@ export function initFrameWatch() {
       const s = buf.sort((a, b) => a - b), med = s[s.length >> 1], p90 = s[Math.floor(s.length * 0.9)];
       buf = [];
       bad = med > 20 || p90 > 34 ? bad + 1 : Math.max(0, bad - 1);   // under ~50fps, or frequent long frames
-      if (bad >= need) { strain("frames"); return; }
+      if (bad >= need) { if (LITE) phoneStill = true; else strain("frames"); markStill(); return; }
     }
     requestAnimationFrame(tick);
   };

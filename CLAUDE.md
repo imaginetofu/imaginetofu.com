@@ -238,6 +238,22 @@ poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (fir
 - `IOS` (perf.js: iPhone/iPad UA, or Mac UA with touch points): the phone hero takes hero-m.mp4 and the After Dark
   station loops put their mp4 <source> first. VP9 WebM plays on iOS but older iPhones decode it on the CPU.
 
+## Still mode + phone camera moves (Oct 26 2026, Dennis)
+- Video vs image sequence: time-based loops stay VIDEO (inter-frame compression + hardware decode; the same loop as
+  WebP frames would be ~8x the bytes and hundreds of MB decoded). Sequences only where scroll drives the frame: the
+  two After Dark camera moves.
+- `stillMode()` (perf.js): strained desktop, or a phone with Save-Data / deviceMemory <= 2 / <= 4 cores, or a phone
+  the frame watch catches (it now runs on LITE too, flipping only still mode). Then the hero loop is never attached
+  (cosmos poster stays; decided at load only) and the After Dark station loops never play or preload (posters
+  show); camera moves, creature, ring and particles keep moving. `html[data-still]` = phone | strained.
+- Phones get the real camera moves: `public/dream/glass/seq-m/{ta,tb}/001-031.webp` (540x960, every 4th frame of
+  trans-1-2 / trans-2-3, centre crop 405x720 at x=437; ~1.5MB total) served from the SITE origin (not Bunny), drawn
+  through the same makeSeq (variant phone/desk, swapped on a 900px resize with a generation guard), decoded in a
+  sliding window on phones and strained desktops. Phones conduct like desktop with CF 0.04; Save-Data phones keep
+  the old dissolve and fetch no frames.
+- prime() calls load() BEFORE setting preload="auto": the other order fetched the desktop station loop the page
+  load had picked (~6MB wasted per phone visit, also on the live site before this fix).
+
 ## Desktop smoothness pass (Oct 25 2026, ultracode: 10 agents, verified pixel-level)
 Friends reported a laggy hero / After Dark on some desktops. Measured CPU-bound (style recalc every frame + canvas
 draw calls), not GPU-bound. Look identical (two verifiers: desktop + phone screenshots, geometry within 0.25px).

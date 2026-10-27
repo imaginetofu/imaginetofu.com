@@ -5,7 +5,7 @@
 
 import { CustomEase } from "gsap/CustomEase";
 import { media, MEDIA_BASE } from "./media.js";
-import { IOS, isOn, LITE, GECKO, isStrained } from "./perf.js";
+import { IOS, isOn, LITE, GECKO, isStrained, stillMode } from "./perf.js";
 
 // the hero cube is position:fixed and rides on into Hello, so its idle loops stay alive for both
 const cubeOn = () => isOn("hero") || isOn("intro");
@@ -765,6 +765,8 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
       return ext;
     };
     const tryAttach = async () => {
+      // still mode (perf.js): the cosmos poster stays and no loop is fetched or decoded
+      if (stillMode()) { video.dataset.codecWhy = "still"; return null; }
       // phones: a 1280x720 re-encode (same frames, about half the bytes, a quarter of the pixels to decode); it ships
       // with the site, not the CDN. Picked by canPlayType alone, as before: no decode probe on the phone path.
       if (LITE) {

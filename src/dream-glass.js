@@ -5,7 +5,7 @@
    path keeps the .it-dream-duo fallback in index.html. */
 
 import { media } from "./media.js";
-import { LITE, TOUCH, IOS, isStrained } from "./perf.js";
+import { LITE, TOUCH, IOS, isStrained, stillMode, SAVE_DATA } from "./perf.js";
 
 const q = (s, c = document) => c.querySelector(s);
 
@@ -51,70 +51,83 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
       return new Promise((res, rej) => { const id = ++n; pend.set(id, { res, rej, blob }); w.postMessage({ id, blob }); });
     };
   })();
+  // Phones (Oct 26 2026) get their own cut: 31 portrait frames (540x960, every 4th frame of the clip, centre-cropped
+  // so the hand-offs meet the 9:16 station loops), ~1.5MB for both moves, so phones see the real push-in and rise
+  // instead of a dissolve. Phones and strained desktops decode a sliding window, never the whole run.
+  // (the phone frames ship with the site, like hero-m; the desktop ones come from the media CDN)
+  const VARIANT = { desk: { n: SEQ_N, w: 1280, h: 720, dir: "/dream/glass/seq/", cdn: true }, phone: { n: 31, w: 540, h: 960, dir: "/dream/glass/seq-m/", cdn: false } };
   function makeSeq(video, dir) {
     const c = document.createElement("canvas");
     c.className = video.className; c.setAttribute("aria-hidden", "true"); c.id = "it-dg-seq-" + dir;
-    c.width = 1280; c.height = 720;                 // the frames' own size; CSS object-fit: cover frames it like the video
     video.replaceWith(c);
     const g = c.getContext("2d", { alpha: false });
-    const blobs = new Array(SEQ_N).fill(null), bm = new Array(SEQ_N).fill(null);
-    let fetching = false, held = false, last = -1;
-    const url = (i) => media("/dream/glass/seq/" + dir + "/" + String(i + 1).padStart(3, "0") + ".webp");
-    const ok = (j) => j >= 0 && j < SEQ_N && bm[j] instanceof ImageBitmap;
+    let V, N, blobs, bm, fetching, held = false, last = -1, cur = 0, inflight = 0;
+    function setVariant(phone) {                     // also on a resize across 900px (a tablet turning)
+      const next = phone ? VARIANT.phone : VARIANT.desk;
+      if (V === next) return;
+      if (bm) bm.forEach((b) => { if (b instanceof ImageBitmap) b.close(); });
+      V = next; N = V.n; c.width = V.w; c.height = V.h;   // the frames' own size; CSS object-fit: cover frames it like the video
+      blobs = new Array(N).fill(null); bm = new Array(N).fill(null); fetching = false; held = false; last = -1; cur = 0;
+    }
+    const windowed = () => WINDOWED || V === VARIANT.phone || isStrained();
+    const url = (i) => { const p = V.dir + dir + "/" + String(i + 1).padStart(3, "0") + ".webp"; return V.cdn ? media(p) : p; };
+    const ok = (j) => j >= 0 && j < N && bm[j] instanceof ImageBitmap;
     // Firefox: never hold all 61 decoded frames (~225MB) at once. Allocating them in one burst stalled it for
     // ~10 frames at each transition (p 0.15-0.21 and 0.61-0.67), worker or not. There it keeps a sliding
     // window around the current frame (plus both hand-off frames), nearest first, two decodes in flight.
     // Chrome keeps the original hold-everything behavior.
-    let cur = 0, inflight = 0;
     const WIN = 8;
     function decode(i) {
       if (bm[i] || !blobs[i]) return;
       bm[i] = "pending"; inflight++;
+      const gen = V;
       decodeBitmap(blobs[i]).then((b) => {
+        if (V !== gen) { b.close(); return; }       // the cut changed while this decoded
         if (held) { bm[i] = b; last = -1; } else { b.close(); bm[i] = null; }
       }, () => { bm[i] = null; }).then(() => { inflight--; pump(); });
     }
-    const keep = (j) => j === 0 || j === SEQ_N - 1 || Math.abs(j - cur) <= WIN + 3;
+    const keep = (j) => j === 0 || j === N - 1 || Math.abs(j - cur) <= WIN + 3;
     function pump() {
-      if (!held || !WINDOWED) return;
-      for (let j = 0; j < SEQ_N; j++) if (bm[j] instanceof ImageBitmap && !keep(j)) { bm[j].close(); bm[j] = null; }
-      const want = [0, SEQ_N - 1];
+      if (!held || !windowed()) return;
+      for (let j = 0; j < N; j++) if (bm[j] instanceof ImageBitmap && !keep(j)) { bm[j].close(); bm[j] = null; }
+      const want = [0, N - 1];
       for (let d = 0; d <= WIN; d++) want.push(cur + d, cur - d);
-      for (const j of want) { if (inflight >= 2) break; if (j >= 0 && j < SEQ_N && !bm[j] && blobs[j]) decode(j); }
+      for (const j of want) { if (inflight >= 2) break; if (j >= 0 && j < N && !bm[j] && blobs[j]) decode(j); }
     }
     function load() {
       if (fetching) return; fetching = true;
       // hand-off frames first (first and last), then the rest in order, four requests at a time
-      const order = [0, SEQ_N - 1]; for (let i = 1; i < SEQ_N - 1; i++) order.push(i);
-      let k = 0;
+      const order = [0, N - 1]; for (let i = 1; i < N - 1; i++) order.push(i);
+      let k = 0; const gen = V;
       const worker = () => {
-        if (k >= order.length) return;
+        if (k >= order.length || V !== gen) return;
         const i = order[k++];
-        fetch(url(i)).then((r) => r.blob()).then((b) => { blobs[i] = b; if (held) WINDOWED ? pump() : decode(i); }, () => {}).then(worker);
+        fetch(url(i)).then((r) => r.blob()).then((b) => { if (V !== gen) return; blobs[i] = b; if (held) windowed() ? pump() : decode(i); }, () => {}).then(worker);
       };
       for (let w = 0; w < 4; w++) worker();
     }
     function hold(on, at = 0) {
       if (on === held) return; held = on;
-      if (on && WINDOWED) { cur = Math.round(Math.max(0, Math.min(1, at)) * (SEQ_N - 1)); pump(); }   // entering from below starts at the end
-      else if (on) { for (let i = 0; i < SEQ_N; i++) decode(i); }
-      else { for (let i = 0; i < SEQ_N; i++) { if (bm[i] instanceof ImageBitmap) bm[i].close(); bm[i] = null; } last = -1; }
+      if (on && windowed()) { cur = Math.round(Math.max(0, Math.min(1, at)) * (N - 1)); pump(); }   // entering from below starts at the end
+      else if (on) { for (let i = 0; i < N; i++) decode(i); }
+      else { for (let i = 0; i < N; i++) { if (bm[i] instanceof ImageBitmap) bm[i].close(); bm[i] = null; } last = -1; }
     }
     function show(f) {
-      const x = Math.max(0, Math.min(1, f)) * (SEQ_N - 1);
-      if (WINDOWED && Math.round(x) !== cur) { cur = Math.round(x); pump(); }
+      const x = Math.max(0, Math.min(1, f)) * (N - 1);
+      if (windowed() && Math.round(x) !== cur) { cur = Math.round(x); pump(); }
       if (Math.abs(x - last) < 0.004) return;
       const i = Math.floor(x);
       let a = i; while (a >= 0 && !ok(a)) a--;
-      let b = Math.min(SEQ_N - 1, i + 1); while (b < SEQ_N && !ok(b)) b++;
-      if (a < 0 && b >= SEQ_N) return;
+      let b = Math.min(N - 1, i + 1); while (b < N && !ok(b)) b++;
+      if (a < 0 && b >= N) return;
       g.globalAlpha = 1;
-      if (a < 0) { g.drawImage(bm[b], 0, 0, 1280, 720); last = x; return; }
-      g.drawImage(bm[a], 0, 0, 1280, 720);
-      if (b < SEQ_N && b !== a) { const w = (x - a) / (b - a); if (w > 0.01) { g.globalAlpha = w; g.drawImage(bm[b], 0, 0, 1280, 720); g.globalAlpha = 1; } }
+      if (a < 0) { g.drawImage(bm[b], 0, 0, V.w, V.h); last = x; return; }
+      g.drawImage(bm[a], 0, 0, V.w, V.h);
+      if (b < N && b !== a) { const w = (x - a) / (b - a); if (w > 0.01) { g.globalAlpha = w; g.drawImage(bm[b], 0, 0, V.w, V.h); g.globalAlpha = 1; } }
       last = x;
     }
-    return { el: c, load, hold, show, get ready() { return ok(0); } };
+    setVariant(mobile);
+    return { el: c, load, hold, show, setVariant, get ready() { return ok(0); } };
   }
   const seqA = makeSeq(vids.tA, "ta"), seqB = makeSeq(vids.tB, "tb");
   vids.tA = seqA.el; vids.tB = seqB.el;
@@ -691,6 +704,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   let lastCardsIn = 0;
   const playing = {};
   function want(v, on) {
+    if (on && stillMode() && v !== vids.tA && v !== vids.tB) on = false;   // still mode: the poster frame stands in
     if (on && !playing[v.id]) { if (v.dataset.dgReload) { delete v.dataset.dgReload; v.load(); } const pr = v.play(); if (pr && pr.catch) pr.catch(() => {}); playing[v.id] = true; }
     if (!on && playing[v.id]) { v.pause(); playing[v.id] = false; }
   }
@@ -719,6 +733,7 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   }
   phoneMQ.addEventListener("change", (e) => {
     mobile = e.matches; if (active) setLoopSources(mobile);
+    seqA.setVariant(mobile); seqB.setVariant(mobile); warmed = false;
     gsap.set([vids.s1, vids.s2, vids.s3], { scale: 1, yPercent: 0 }); lastSet = new WeakMap(); cxCache.clear();
     if (!mobile && active) warm();
   });
@@ -742,7 +757,8 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   }
   function conduct(p) {
     const { s1, tA, s2, tB, s3, CF } = SCORE;
-    if (mobile) conductPhone(p, SCORE); else conductDesk(p, SCORE);
+    if (mobile && SAVE_DATA) conductPhone(p, SCORE);
+    else conductDesk(p, mobile ? { ...SCORE, CF: 0.04 } : SCORE);   // phones: a wider crossfade (the portrait loops are their own renders)
     shared(p);
   }
   // phones: the incoming station dissolves in OVER the outgoing one (which holds at full opacity
@@ -825,15 +841,17 @@ export function initDreamGlass({ gsap, ScrollTrigger }) {
   // load them ourselves and seek to the first frame so a decoded frame exists before the hand-off
   const primed = {};
   function prime(v, on) {
-    if (!on || !v || primed[v.id]) return; primed[v.id] = true;
+    if (!on || !v || primed[v.id] || stillMode()) return; primed[v.id] = true;
     if (v.readyState >= 2) return;
     delete v.dataset.dgReload;   // phones: this load() IS the source switch; want() must not restart it at play time
     v.addEventListener("loadedmetadata", () => { try { v.currentTime = 0.04; } catch (e) {} }, { once: true });   // decode a first frame
-    v.preload = "auto"; v.load();
+    // load() first: switching preload to "auto" on the element as shipped would start fetching the source the page
+    // load picked (the desktop file) before load() swaps in the phone one (~6MB wasted per phone visit)
+    v.load(); v.preload = "auto";
   }
   let warmed = false;
   function warm() {
-    if (warmed || mobile) return; warmed = true;
+    if (warmed || (mobile && SAVE_DATA)) return; warmed = true;
     seqA.load(); setTimeout(() => seqB.load(), 1500);   // the push-in's frames first
   }
 
