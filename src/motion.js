@@ -4,7 +4,7 @@
    ease-out only, stagger 0.06–0.12s, no bounce, no 360° spins. */
 
 import { CustomEase } from "gsap/CustomEase";
-import { media, MEDIA_BASE } from "./media.js";
+import { mediaVideo, media, MEDIA_BASE } from "./media.js";
 import { IOS, isOn, LITE, GECKO, isStrained, stillMode } from "./perf.js";
 
 // the hero cube is position:fixed and rides on into Hello, so its idle loops stay alive for both
@@ -773,7 +773,7 @@ export function initMotion({ gsap, ScrollTrigger, lenis }) {
         const ext = !IOS && video.canPlayType('video/webm; codecs="vp9"') ? "webm" : "mp4";
         video.dataset.codec = ext === "mp4" ? "h264" : "vp9";
         video.dataset.codecWhy = IOS ? "ios" : "lite";
-        return "/dream/hero-m." + ext;
+        return mediaVideo("/dream/hero-m." + ext);   // on the CDN once VIDEO_ON_CDN is on (Safari needs byte ranges)
       }
       const ext = await pickCodec();
       // CDN copy: no HEAD probe (cross-origin, and the file is known to exist); pick by codec support

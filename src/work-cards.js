@@ -6,6 +6,8 @@
    Reduced motion: never attach a source; the poster is the card.
    Sources are attached lazily so eight cards don't cost eight requests. */
 
+import { mediaVideo } from "./media.js";
+
 export function initWorkCards({ reduced }) {
   const cards = document.querySelectorAll(".it-card[data-loop]");
   if (!cards.length || reduced) return;
@@ -18,10 +20,10 @@ export function initWorkCards({ reduced }) {
     video.dataset.armed = "1";
     const base = card.dataset.loop; // e.g. /work/lemonadmedia/card
     const webm = document.createElement("source");
-    webm.src = base + ".webm";
+    webm.src = mediaVideo(base + ".webm");   // CDN once VIDEO_ON_CDN is on (byte ranges for Safari)
     webm.type = "video/webm";
     const mp4 = document.createElement("source");
-    mp4.src = base + ".mp4";
+    mp4.src = mediaVideo(base + ".mp4");
     mp4.type = "video/mp4";
     video.append(webm, mp4);
     video.addEventListener("playing", () => card.classList.add("is-playing"));

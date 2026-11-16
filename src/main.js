@@ -70,11 +70,60 @@ if (!reduced && TOUCH) {
   window.lenis = lenis; // debug/verification handle
 }
 
+/* ---------- nav: gliding highlight + current section (Nov 15 2026) ----------
+   Desktop: a mint pill glides to the hovered link and rests on the section in view; phones: the menu marks it.
+   One IntersectionObserver on a thin band across the middle of the screen; no scroll listeners. */
+{
+  const bar = document.querySelector(".it-nav-links");
+  const glide = bar?.querySelector(".it-nav-glide");
+  const ids = ["work", "services", "studio", "contact"];
+  const navA = (id) => bar?.querySelector(`a[href="#${id}"]`);
+  const menuA = (id) => document.querySelector(`.it-menu-links a[href="#${id}"]`);
+  let current = null, hover = null;
+  const place = (a) => {
+    if (!bar || !glide) return;
+    if (!a) { bar.classList.remove("has-glide"); return; }
+    const fresh = !bar.classList.contains("has-glide");
+    bar.classList.toggle("is-fresh", fresh);
+    bar.style.setProperty("--gx", a.offsetLeft + "px");
+    bar.style.setProperty("--gw", a.offsetWidth + "px");
+    bar.classList.add("has-glide");
+    if (fresh) requestAnimationFrame(() => bar.classList.remove("is-fresh"));
+  };
+  const setCurrent = (id) => {
+    if (id === current) return;
+    current = id;
+    ids.forEach((k) => {
+      const on = k === id;
+      navA(k)?.classList.toggle("is-current", on);
+      menuA(k)?.classList.toggle("is-current", on);
+      if (on) { navA(k)?.setAttribute("aria-current", "location"); menuA(k)?.setAttribute("aria-current", "location"); }
+      else { navA(k)?.removeAttribute("aria-current"); menuA(k)?.removeAttribute("aria-current"); }
+    });
+    if (!hover) place(id ? navA(id) : null);
+  };
+  bar?.querySelectorAll("a").forEach((a) => {
+    a.addEventListener("pointerenter", () => { hover = a; place(a); });
+    a.addEventListener("focus", () => { hover = a; place(a); });
+    a.addEventListener("blur", () => { hover = null; place(current ? navA(current) : null); });
+  });
+  bar?.addEventListener("pointerleave", () => { hover = null; place(current ? navA(current) : null); });
+  addEventListener("resize", () => place(hover || (current ? navA(current) : null)), { passive: true });
+  if ("IntersectionObserver" in window) {
+    const live = new Set();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) e.isIntersecting ? live.add(e.target.id) : live.delete(e.target.id);
+      setCurrent(ids.find((k) => live.has(k)) || null);
+    }, { rootMargin: "-48% 0px -48% 0px" });
+    ids.forEach((k) => { const el = document.getElementById(k); if (el) io.observe(el); });
+  }
+}
+
 /* ---------- anchor links ---------- */
 
 const menu = document.getElementById("it-menu");
 const menuBtn = document.querySelector(".it-menu-btn");
-const menuClose = document.querySelector(".it-menu-close");
+const menuLabel = document.querySelector(".it-menu-label");
 
 let menuTimer = 0;
 
@@ -87,6 +136,8 @@ function closeMenu({ restoreFocus = true } = {}) {
   if (!menu || menu.hidden || !menu.classList.contains("is-open")) return;
   menu.classList.remove("is-open");
   menuBtn?.setAttribute("aria-expanded", "false");
+  if (menuLabel) menuLabel.textContent = "Menu";
+  doc.classList.remove("menu-open");
   doc.style.overflow = "";
   lenis?.start();
   if (restoreFocus) menuBtn?.focus({ preventScroll: true });
@@ -100,9 +151,11 @@ function openMenu() {
   menu.getBoundingClientRect(); // commit the closed state so the transition runs
   menu.classList.add("is-open");
   menuBtn?.setAttribute("aria-expanded", "true");
+  if (menuLabel) menuLabel.textContent = "Close";
+  doc.classList.add("menu-open");   // the nav rides above the menu: logo + pill stay put
   doc.style.overflow = "hidden";
   lenis?.stop();
-  menuClose?.focus({ preventScroll: true });
+  menu.querySelector("a[href]")?.focus({ preventScroll: true });
 }
 menu?.addEventListener("transitionend", (e) => {
   if (e.target === menu && e.propertyName === "clip-path") finishClose();
@@ -110,13 +163,12 @@ menu?.addEventListener("transitionend", (e) => {
 menuBtn?.addEventListener("click", () =>
   menu?.classList.contains("is-open") ? closeMenu() : openMenu()
 );
-menuClose?.addEventListener("click", () => closeMenu());
 addEventListener("keydown", (e) => {
   if (!menu?.classList.contains("is-open")) return;
   if (e.key === "Escape") return closeMenu();
   if (e.key !== "Tab") return;
   // keep focus inside the open menu
-  const items = menu.querySelectorAll("button, a[href]");
+  const items = [menuBtn, ...menu.querySelectorAll("a[href]")].filter(Boolean);   // the pill (now "Close") is part of the loop
   const first = items[0];
   const last = items[items.length - 1];
   if (e.shiftKey && document.activeElement === first) {

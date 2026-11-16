@@ -19,7 +19,8 @@ import "./styles/lite.css";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
-import { TOUCH } from "./perf.js";
+import { TOUCH, IOS } from "./perf.js";
+import { media, MEDIA_BASE, VIDEO_ON_CDN } from "./media.js";
 import { initPageTransition } from "./page-transition.js";
 import { initCaseWorks } from "./case-works.js";
 import { initBuddy, initBuddyScrollTop } from "./mascot.js";
@@ -80,6 +81,9 @@ initBuddyScrollTop({ lenis, reduced });
    .is-pending on the host. Returns a promise resolving to the src or null. */
 
 const probe = async (base) => {
+  // production: the loops live on the media CDN (byte ranges for Safari), known to exist, so no probe; WebM where it
+  // plays (never on iPhones/iPads, whose hardware decoder is H.264)
+  if (MEDIA_BASE && VIDEO_ON_CDN) return media(base + (!IOS && document.createElement("video").canPlayType('video/webm; codecs="vp9"') ? ".webm" : ".mp4"));
   for (const src of [base + ".webm", base + ".mp4"]) {
     try {
       const res = await fetch(src, { method: "HEAD" });

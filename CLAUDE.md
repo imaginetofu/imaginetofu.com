@@ -238,6 +238,25 @@ poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (fir
 - `IOS` (perf.js: iPhone/iPad UA, or Mac UA with touch points): the phone hero takes hero-m.mp4 and the After Dark
   station loops put their mp4 <source> first. VP9 WebM plays on iOS but older iPhones decode it on the CPU.
 
+## Nav + menu refresh, Mariposa first, videos on the CDN (Nov 16 2026)
+- Work order is now Mariposa, Lemonad Media, National Entity, Tramokyo, Lion Card, Vision Quest, Omega GTI (home
+  card indexes, "Case study NN / 07" and the Next-up chain all follow it).
+- Desktop nav: links in a glass capsule (`.it-nav-links`, readable over the hero); `.it-nav-glide` mint pill glides
+  to the hovered link and rests on the section in view (main.js: --gx/--gw, .has-glide, .is-current +
+  aria-current="location" from one IntersectionObserver on a -48%/-48% band). No blur on lite/strained.
+- Phones: `.it-menu-btn` = solid pill with a two-line icon that turns into an x ("Menu" -> "Close" in
+  .it-menu-label); html.menu-open lifts the see-through nav above the opaque menu, so the logo and the pill stay put
+  (no separate close button; the focus loop is pill + links). Menu = numbered links with italic hints, current
+  section marked, Book a call button + email. Open-state rules use !important to beat the lite-tier bar/pill rules.
+- Every self-hosted video now comes from the media CDN via media(): phone hero hero-m.*, Services mosaic sources
+  /dream/tiles/* (crossorigin="anonymous": the mosaic reads their pixels; Bunny sends ACAO *), work-card loops
+  (work-cards.js), case-page story tiles (case.js: no HEAD probe on the CDN, mp4 on iOS). Reason: Cloudflare static
+  assets ignore Range and Safari will not play video without it. Upload with UPLOAD-VIDEOS-TO-CDN.bat (35 files);
+  replacing a card/tile file later means a NEW name or a Bunny purge (the CDN caches).
+  STATUS 2026-11-16: the 35-file upload reported success but the CDN answers 404 for all of them (existing files come
+  from the LA storage servers, these misses from DE ones), so `VIDEO_ON_CDN` in src/media.js is OFF and the Services
+  sources in index.html point at the site again. Flip it (and the sources) once every file answers 206 on the CDN.
+
 ## Mariposa case study refresh (Nov 15 2026)
 Mariposa relaunched Nov 13 as a custom build (Vite + three.js + GSAP, Cloudflare, Stripe TKS seats, owner page), so
 the case page was rewritten: facts (Custom build · Three.js · GSAP / Launched November 2026 / Design · Build · 3D ·

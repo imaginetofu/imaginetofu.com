@@ -140,7 +140,7 @@ em { font-style: italic; }
    outlined Fraunces wordmark). */
 html :is(h1, h2, h3, h4, .it-display, .it-h2, .it-statement, .it-quote, .it-dg-line,
   .it-dream-punch, .it-dream-lead-title, .it-pre-words, .it-cs-sub) em,
-html :is(.it-rotate, .it-cs-quote, .it-dream-word, .it-dream-flow, .it-dream-x-glyph, .it-menu-book) {
+html :is(.it-rotate, .it-cs-quote, .it-dream-word, .it-dream-flow, .it-dream-x-glyph) {
   font-family: var(--it-font-accent);
   font-style: italic;
 }
@@ -308,16 +308,6 @@ span.it-logo-mark { container-type: size; } /* the layers read the mark's box as
 .it-nav-right { display: flex; align-items: center; gap: 0.9rem; }
 .it-nav-cta { padding: 0.62em 1.3em; font-size: 0.88rem; }
 
-.it-menu-btn {
-  display: none;
-  font-family: var(--it-font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.7em 1.2em;
-  border: 1px solid var(--it-cream-28);
-  border-radius: 999px;
-}
 
 /* mobile menu — curtain drops from the nav, links rise in a stagger.
    JS (main.js) removes [hidden], then toggles .is-open / .is-closing. */
@@ -329,10 +319,8 @@ span.it-logo-mark { container-type: size; } /* the layers read the mark's box as
   flex-direction: column;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: calc(var(--it-gutter) + 0.5rem) var(--it-gutter) var(--it-gutter);
-  background: color-mix(in srgb, var(--it-ground) 96%, transparent);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
+  padding: calc(var(--it-gutter) + 4.75rem) var(--it-gutter) calc(var(--it-gutter) + env(safe-area-inset-bottom, 0px));
+  background: var(--it-ground);
   clip-path: inset(0 0 100% 0 round 0 0 48px 48px);
   visibility: hidden;
   transition:
@@ -366,78 +354,6 @@ span.it-logo-mark { container-type: size; } /* the layers read the mark's box as
   opacity: 0.55;
   transform: none;
   transition: opacity 1.2s ease 0.2s, transform 1.4s var(--it-ease-reveal) 0.1s;
-}
-
-.it-menu-close {
-  position: relative;
-  align-self: flex-end;
-  font-family: var(--it-font-mono);
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 0.7em 1.2em;
-  border: 1px solid var(--it-cream-28);
-  border-radius: 999px;
-}
-.it-menu-links {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 3rem;
-}
-.it-menu-links a {
-  font-family: var(--it-font-display);
-  font-size: clamp(2.2rem, 9vw, 3.4rem);
-  line-height: 1.35;
-  color: var(--it-cream);
-}
-.it-menu-links a:hover { color: var(--it-mint); }
-.it-menu-book { font-style: italic; color: var(--it-mint) !important; }
-.it-menu-foot {
-  position: relative;
-  margin-top: auto;
-  font-family: var(--it-font-mono);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--it-cream-50);
-}
-
-/* item choreography: out = quick fade/drop together, in = staggered rise */
-.it-menu-links a,
-.it-menu-close,
-.it-menu-foot {
-  opacity: 0;
-  transform: translateY(0.45em);
-  transition:
-    opacity 0.22s ease,
-    transform 0.3s ease,
-    color 0.25s;
-}
-.it-menu-links a { transform: translateY(0.6em) rotate(1.5deg); transform-origin: left bottom; }
-.it-menu.is-open :is(.it-menu-links a, .it-menu-close, .it-menu-foot) {
-  opacity: 1;
-  transform: none;
-  transition:
-    opacity 0.6s ease calc(0.18s + var(--i, 0) * 0.065s),
-    transform 0.9s var(--it-ease-reveal) calc(0.18s + var(--i, 0) * 0.065s),
-    color 0.25s;
-}
-.it-menu-close { --i: 0; }
-.it-menu-links a:nth-child(1) { --i: 1; }
-.it-menu-links a:nth-child(2) { --i: 2; }
-.it-menu-links a:nth-child(3) { --i: 3; }
-.it-menu-links a:nth-child(4) { --i: 4; }
-.it-menu-links a:nth-child(5) { --i: 5.5; }
-.it-menu-foot { --i: 7; }
-
-/* menu button: pressed feedback */
-.it-menu-btn { transition: background-color 0.3s, border-color 0.3s, color 0.3s; }
-.it-menu-btn[aria-expanded="true"] {
-  background: var(--it-cream);
-  border-color: var(--it-cream);
-  color: var(--it-ground);
 }
 
 html.reduced .it-menu,
@@ -800,3 +716,135 @@ html.js:root body {
   transition: opacity 0.45s var(--it-ease-reveal);
 }
 html.reduced:root body { transition: none; }
+
+/* ================= nav + menu refresh (Nov 15 2026) =================
+   Desktop: the links sit in a glass capsule (readable over the bright hero); a soft mint pill glides to the link
+   under the pointer and otherwise rests on the section in view (main.js: --gx / --gw, .has-glide, .is-current).
+   Phones: a solid Menu pill whose two lines turn into a close mark; the menu below it is opaque, numbered, and marks
+   the current section. Transforms + opacity only; reduced motion drops the transitions. */
+@media (min-width: 861px) {
+  .it-nav-links {
+    position: relative;
+    gap: 0.15rem;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--it-ground) 52%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--it-cream) 12%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+  .it-nav.is-scrolled .it-nav-links { background: color-mix(in srgb, var(--it-cream) 4%, transparent); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .it-nav-links a {
+    position: relative;
+    z-index: 1;
+    padding: 0.5em 1.05em;
+    border-radius: 999px;
+    color: var(--it-cream-80);
+  }
+  .it-nav-links a.is-current { color: var(--it-cream); }
+  .it-nav-links a:hover, .it-nav-links a:focus-visible { color: var(--it-mint); }
+  .it-nav-glide {
+    position: absolute;
+    z-index: 0;
+    top: 0.3rem;
+    bottom: 0.3rem;
+    left: 0;
+    width: var(--gw, 0px);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--it-mint) 15%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--it-mint) 28%, transparent);
+    transform: translateX(var(--gx, 0px));
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.55s var(--it-ease-reveal), width 0.55s var(--it-ease-reveal), opacity 0.35s ease;
+  }
+  .it-nav-links.has-glide .it-nav-glide { opacity: 1; }
+  .it-nav-links.is-fresh .it-nav-glide { transition: opacity 0.35s ease; }   /* first placement: appear in place, no slide */
+}
+.it-nav-glide { display: none; }
+@media (min-width: 861px) { .it-nav-glide { display: block; } }
+
+/* phone menu button: a solid pill, readable over the hero; the two lines become a close mark */
+.it-menu-btn {
+  display: none;
+  align-items: center;
+  gap: 0.65em;
+  font-family: var(--it-font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--it-cream);
+  padding: 0.72em 1.1em 0.72em 0.95em;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--it-ground) 70%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--it-cream) 22%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: background-color 0.35s, box-shadow 0.35s, color 0.35s;
+}
+@media (max-width: 860px) { .it-menu-btn { display: inline-flex; } }   /* (repeated here: the rule above comes later than the responsive block) */
+.it-menu-icon { position: relative; width: 14px; height: 9px; }
+.it-menu-icon i {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transition: transform 0.45s var(--it-ease-reveal), width 0.45s var(--it-ease-reveal);
+}
+.it-menu-icon i:first-child { top: 0; }
+.it-menu-icon i:last-child { bottom: 0; width: 64%; }
+html .it-menu-btn[aria-expanded="true"] { background: var(--it-cream) !important; box-shadow: none; color: var(--it-ground); }   /* beats the lite-tier pill background */
+.it-menu-btn[aria-expanded="true"] .it-menu-icon i:first-child { transform: translateY(3.75px) rotate(45deg); }
+.it-menu-btn[aria-expanded="true"] .it-menu-icon i:last-child { width: 100%; transform: translateY(-3.75px) rotate(-45deg); }
+html.is-lite .it-menu-btn { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--it-ground) 86%, transparent); }
+
+/* while the menu is open the nav rides above it, see-through, so the logo and the pill stay exactly where they were */
+html.menu-open .it-nav { z-index: 95; background: transparent !important; border-bottom-color: transparent !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }   /* over the scrolled + lite-tier bar styles */
+
+.it-menu-links { position: relative; display: flex; flex-direction: column; margin-top: 0.5rem; }
+.it-menu-links a {
+  display: grid;
+  grid-template-columns: 2.4rem 1fr;
+  align-items: baseline;
+  column-gap: 0.4rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--it-cream) 10%, transparent);
+  color: var(--it-cream);
+}
+.it-menu-links a:first-child { border-top: 1px solid color-mix(in srgb, var(--it-cream) 10%, transparent); }
+.it-menu-no { font-family: var(--it-font-mono); font-size: 0.72rem; color: var(--it-peach); letter-spacing: 0.08em; }
+.it-menu-word { font-family: var(--it-font-display); font-size: clamp(2.1rem, 9.5vw, 3rem); line-height: 1.05; transition: color 0.25s; }
+.it-menu-hint { grid-column: 2; margin-top: 0.3rem; font-family: var(--it-font-accent); font-style: italic; font-size: 0.98rem; color: var(--it-cream-65); }
+.it-menu-links a:hover .it-menu-word, .it-menu-links a:focus-visible .it-menu-word { color: var(--it-mint); }
+.it-menu-links a.is-current .it-menu-word { color: var(--it-mint); }
+.it-menu-links a.is-current .it-menu-no::after { content: ""; display: inline-block; width: 6px; height: 6px; margin-left: 0.45em; border-radius: 50%; background: var(--it-mint); vertical-align: 0.15em; }
+
+.it-menu-cta { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; margin-top: 2rem; }
+.it-menu-book { align-self: stretch; text-align: center; justify-content: center; }
+.it-menu-mail { font-family: var(--it-font-mono); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--it-cream-80); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--it-cream) 28%, transparent); text-underline-offset: 0.35em; }
+.it-menu-foot { position: relative; margin-top: auto; padding-top: 2rem; font-family: var(--it-font-mono); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--it-cream-50); }
+
+/* item choreography: out = a quick fade together, in = a staggered rise */
+.it-menu-links a, .it-menu-cta, .it-menu-foot {
+  opacity: 0;
+  transform: translateY(0.9rem);
+  transition: opacity 0.22s ease, transform 0.3s ease;
+}
+.it-menu.is-open :is(.it-menu-links a, .it-menu-cta, .it-menu-foot) {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.6s ease calc(0.16s + var(--i, 0) * 0.07s), transform 0.9s var(--it-ease-reveal) calc(0.16s + var(--i, 0) * 0.07s);
+}
+.it-menu-links a:nth-child(1) { --i: 1; }
+.it-menu-links a:nth-child(2) { --i: 2; }
+.it-menu-links a:nth-child(3) { --i: 3; }
+.it-menu-links a:nth-child(4) { --i: 4; }
+.it-menu-cta { --i: 5.5; }
+.it-menu-foot { --i: 7; }
+
+@media (prefers-reduced-motion: reduce) {
+  .it-nav-glide, .it-menu-icon i, .it-menu-btn { transition: none !important; }
+}
+html.reduced .it-nav-glide { transition: opacity 0.2s !important; }

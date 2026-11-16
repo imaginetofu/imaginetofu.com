@@ -21,6 +21,10 @@ const INCLUDE = [
   /^dream\/glass\/mobile\/station\d\.(mp4|webm)$/,
   /^dream\/glass\/seq\/(ta|tb)\/\d+\.webp$/,
   /^work\/[a-z]+\/motion-[a-z-]+\.mp4$/,
+  // self-hosted until Nov 2026; Safari needs byte ranges, which Cloudflare static assets do not answer
+  /^dream\/hero-m\.(mp4|webm)$/,
+  /^dream\/tiles\/(build|motion|care)\.(mp4|webm)$/,
+  /^work\/[a-z]+\/(card|tile)\.(mp4|webm)$/,
 ];
 
 async function* walk(dir) {

@@ -116,3 +116,6 @@ html.is-strained .it-tile-aura { filter: none; -webkit-mask-image: radial-gradie
 /* the care tile's peeking tofu sets its animations with !important on a more specific selector (sections.css),
    which would win over the .is-off pause above; this outranks it so the peek rests with its section */
 .is-off .it-tile .it-tile-peek img { animation-play-state: paused !important; }
+
+/* nav capsule (Nov 15 2026): no live blur where the GPU budget is tight */
+html.is-lite .it-nav-links, html.is-strained .it-nav-links { -webkit-backdrop-filter: none; backdrop-filter: none; background: color-mix(in srgb, var(--it-ground) 80%, transparent); }

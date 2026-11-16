@@ -292,6 +292,7 @@
       </span>
       <img class="it-logo-word" src="/brand/logo-wordmark.svg" alt="" width="491" height="109" /></a>
     <nav class="it-nav-links" aria-label="Primary">
+      <span class="it-nav-glide" aria-hidden="true"></span>
       <a href="#work">Work</a>
       <a href="#services">Services</a>
       <a href="#studio">Studio</a>
@@ -299,20 +300,22 @@
     </nav>
     <div class="it-nav-right">
       <a class="it-btn it-btn-mint it-nav-cta" href="/book/">Book a call</a>
-      <button class="it-menu-btn" type="button" aria-expanded="false" aria-controls="it-menu">Menu</button>
+      <button class="it-menu-btn" type="button" aria-expanded="false" aria-controls="it-menu"><span class="it-menu-icon" aria-hidden="true"><i></i><i></i></span><span class="it-menu-label">Menu</span></button>
     </div>
   </header>
 
   <!-- mobile menu -->
   <div class="it-menu" id="it-menu" hidden>
-    <button class="it-menu-close" type="button" aria-label="Close menu">Close</button>
     <nav class="it-menu-links" aria-label="Mobile">
-      <a href="#work">Work</a>
-      <a href="#services">Services</a>
-      <a href="#studio">Studio</a>
-      <a href="#contact">Contact</a>
-      <a class="it-menu-book" href="/book/">Book a call</a>
+      <a href="#work"><span class="it-menu-no">01</span><span class="it-menu-word">Work</span><span class="it-menu-hint">things we’ve pressed</span></a>
+      <a href="#services"><span class="it-menu-no">02</span><span class="it-menu-word">Services</span><span class="it-menu-hint">build · move · tend</span></a>
+      <a href="#studio"><span class="it-menu-no">03</span><span class="it-menu-word">Studio</span><span class="it-menu-hint">a small studio in San Leandro</span></a>
+      <a href="#contact"><span class="it-menu-no">04</span><span class="it-menu-word">Contact</span><span class="it-menu-hint">say hello</span></a>
     </nav>
+    <div class="it-menu-cta">
+      <a class="it-btn it-btn-mint it-btn-big it-menu-book" href="/book/">Book a call</a>
+      <a class="it-menu-mail" href="mailto:dennis@imaginetofu.com">dennis@imaginetofu.com</a>
+    </div>
     <p class="it-menu-foot">San Leandro, CA → everywhere</p>
   </div>
 
@@ -588,6 +591,21 @@
           <!-- Real work: the capture is the art (poster + hover/in-view scroll loop,
                see src/work-cards.js). Chrome, index, meta stay on tokens.
                DENNIS: tag lines are provisional one-liners, edit freely. -->
+          <article class="it-card" data-loop="/work/mariposa/card">
+            <a class="it-card-link" href="/work/mariposa" aria-label="Mariposa Coffee Bar — case study">
+            <div class="it-card-art it-art-shot">
+              <img class="it-shot-poster" src="/work/mariposa/card.webp" alt="" width="1152" height="720" loading="lazy" decoding="async" onerror="this.closest('.it-card-art').classList.add('is-pending')" />
+              <video class="it-shot-loop" muted loop playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
+              <i class="it-shot-pending" aria-hidden="true">capture pending</i>
+            </div>
+            <footer class="it-card-meta">
+              <span class="it-card-index">01</span>
+              <h3 class="it-card-title">Mariposa Coffee Bar</h3>
+              <p class="it-card-tag">Cuban &amp; Vietnamese coffee · 3D + ticketing</p>
+            </footer>
+            </a>
+          </article>
+
           <article class="it-card" data-loop="/work/lemonadmedia/card">
             <a class="it-card-link" href="/work/lemonadmedia" aria-label="Lemonad Media — case study">
             <div class="it-card-art it-art-shot">
@@ -596,7 +614,7 @@
               <i class="it-shot-pending" aria-hidden="true">capture pending</i>
             </div>
             <footer class="it-card-meta">
-              <span class="it-card-index">01</span>
+              <span class="it-card-index">02</span>
               <h3 class="it-card-title">Lemonad Media</h3>
               <p class="it-card-tag">Food &amp; hospitality photography · portfolio site</p>
             </footer>
@@ -611,7 +629,7 @@
               <i class="it-shot-pending" aria-hidden="true">capture pending</i>
             </div>
             <footer class="it-card-meta">
-              <span class="it-card-index">02</span>
+              <span class="it-card-index">03</span>
               <h3 class="it-card-title">National Entity</h3>
               <p class="it-card-tag">Sacramento event production · web &amp; motion</p>
             </footer>
@@ -626,7 +644,7 @@
               <i class="it-shot-pending" aria-hidden="true">capture pending</i>
             </div>
             <footer class="it-card-meta">
-              <span class="it-card-index">03</span>
+              <span class="it-card-index">04</span>
               <h3 class="it-card-title">Tramokyo</h3>
               <p class="it-card-tag">Desert gathering · event site &amp; registration</p>
             </footer>
@@ -641,24 +659,9 @@
               <i class="it-shot-pending" aria-hidden="true">capture pending</i>
             </div>
             <footer class="it-card-meta">
-              <span class="it-card-index">04</span>
+              <span class="it-card-index">05</span>
               <h3 class="it-card-title">Lion Card</h3>
               <p class="it-card-tag">Luxury metal cards · Shopify build</p>
-            </footer>
-            </a>
-          </article>
-
-          <article class="it-card" data-loop="/work/mariposa/card">
-            <a class="it-card-link" href="/work/mariposa" aria-label="Mariposa Coffee Bar — case study">
-            <div class="it-card-art it-art-shot">
-              <img class="it-shot-poster" src="/work/mariposa/card.webp" alt="" width="1152" height="720" loading="lazy" decoding="async" onerror="this.closest('.it-card-art').classList.add('is-pending')" />
-              <video class="it-shot-loop" muted loop playsinline preload="none" tabindex="-1" aria-hidden="true"></video>
-              <i class="it-shot-pending" aria-hidden="true">capture pending</i>
-            </div>
-            <footer class="it-card-meta">
-              <span class="it-card-index">05</span>
-              <h3 class="it-card-title">Mariposa Coffee Bar</h3>
-              <p class="it-card-tag">Cuban &amp; Vietnamese coffee · 3D + ticketing</p>
             </footer>
             </a>
           </article>
@@ -733,7 +736,7 @@
         <li class="it-tile it-tile--build" data-reveal>
           <div class="it-tile-scene" aria-hidden="true">
             <img src="/dream/tiles/build.webp" alt="" width="300" height="400" decoding="async">
-            <video class="it-tile-video" muted loop playsinline preload="none" poster="/dream/tiles/build.webp">
+            <video class="it-tile-video" muted loop playsinline preload="none" crossorigin="anonymous" poster="/dream/tiles/build.webp">
               <source src="/dream/tiles/build.webm" type="video/webm">
               <source src="/dream/tiles/build.mp4" type="video/mp4">
             </video>
@@ -753,7 +756,7 @@
         <li class="it-tile it-tile--motion" data-reveal>
           <div class="it-tile-scene" aria-hidden="true">
             <img src="/dream/tiles/motion.webp" alt="" width="300" height="400" decoding="async">
-            <video class="it-tile-video" muted loop playsinline preload="none" poster="/dream/tiles/motion.webp">
+            <video class="it-tile-video" muted loop playsinline preload="none" crossorigin="anonymous" poster="/dream/tiles/motion.webp">
               <source src="/dream/tiles/motion.webm" type="video/webm">
               <source src="/dream/tiles/motion.mp4" type="video/mp4">
             </video>
@@ -774,7 +777,7 @@
           <a class="it-tile-link" href="https://tofupress.host">
             <div class="it-tile-scene" aria-hidden="true">
               <img src="/dream/tiles/care.webp" alt="" width="300" height="400" decoding="async">
-            <video class="it-tile-video" muted loop playsinline preload="none" poster="/dream/tiles/care.webp">
+            <video class="it-tile-video" muted loop playsinline preload="none" crossorigin="anonymous" poster="/dream/tiles/care.webp">
               <source src="/dream/tiles/care.webm" type="video/webm">
               <source src="/dream/tiles/care.mp4" type="video/mp4">
             </video>
