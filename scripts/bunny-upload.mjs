@@ -1,6 +1,6 @@
 // Uploads the heavy media in public/ to a bunny.net Storage Zone, same relative paths.
 //   BUNNY_ZONE=<storage zone name> BUNNY_KEY=<zone password> [BUNNY_HOST=ny.storage.bunnycdn.com] \
-//     node scripts/bunny-upload.mjs [--dry]
+//     node scripts/bunny-upload.mjs [--dry] [--only <regex>]
 // BUNNY_HOST is the zone's regional endpoint (default storage.bunnycdn.com = Falkenstein/DE).
 // Idempotent: PUT overwrites. Verifies each upload by size via a follow-up GET listing.
 import { readFile, readdir, stat } from "node:fs/promises";
@@ -9,6 +9,9 @@ import { join, relative, sep } from "node:path";
 const ZONE = process.env.BUNNY_ZONE, KEY = process.env.BUNNY_KEY;
 const HOST = process.env.BUNNY_HOST || "storage.bunnycdn.com";
 const DRY = process.argv.includes("--dry");
+// --only <regex>: upload just the matching files (e.g. one case study's new clips) instead of the whole set
+const onlyAt = process.argv.indexOf("--only");
+const ONLY = onlyAt > 0 ? new RegExp(process.argv[onlyAt + 1]) : null;
 if (!DRY && (!ZONE || !KEY)) { console.error("Set BUNNY_ZONE and BUNNY_KEY (storage zone name + its password)."); process.exit(1); }
 
 const ROOT = new URL("../public/", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
@@ -29,7 +32,7 @@ async function* walk(dir) {
 const files = [];
 for await (const p of walk(ROOT)) {
   const rel = relative(ROOT, p).split(sep).join("/");
-  if (INCLUDE.some((re) => re.test(rel))) files.push({ p, rel, size: (await stat(p)).size });
+  if (INCLUDE.some((re) => re.test(rel)) && (!ONLY || ONLY.test(rel))) files.push({ p, rel, size: (await stat(p)).size });
 }
 files.sort((a, b) => a.rel.localeCompare(b.rel));
 const total = files.reduce((n, f) => n + f.size, 0);

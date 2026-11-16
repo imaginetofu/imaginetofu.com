@@ -238,6 +238,22 @@ poster-only (work-cards.js). The act-3 hop still ends at `.it-card top 70%` (fir
 - `IOS` (perf.js: iPhone/iPad UA, or Mac UA with touch points): the phone hero takes hero-m.mp4 and the After Dark
   station loops put their mp4 <source> first. VP9 WebM plays on iOS but older iPhones decode it on the CPU.
 
+## Mariposa case study refresh (Nov 15 2026)
+Mariposa relaunched Nov 13 as a custom build (Vite + three.js + GSAP, Cloudflare, Stripe TKS seats, owner page), so
+the case page was rewritten: facts (Custom build · Three.js · GSAP / Launched November 2026 / Design · Build · 3D ·
+Ticketing), story tile 3, six NEW clips with fresh names (motion-drip, -pocket, -story, -menu, -supper, -flyers; the
+old motion-hero/mobile/about/magic/events are gone, backups in notes/backup-mariposa-case-2026-11-15/), new card loop
++ poster, tile, hero-desktop and og/mariposa.jpg; home card tag "3D + ticketing".
+- Clips were recorded FRAME BY FRAME from the live site (scratchpad vrec.mjs pattern): the page runs on a virtual
+  clock (Date.now / performance.now / requestAnimationFrame stepped 1/30 s per screenshot, CSS animation playback rate
+  matched to capture cost), scroll and pointer issued per frame. Live screencasting a WebGL page only caught ~12
+  distinct fps. The Mariposa site sets scroll-behavior: smooth, so scripted scrolls need behavior: "instant".
+- Encode from JPEG frames with out_range=tv,format=yuv420p + -color_range tv: the first VP9 card.webm (full-range
+  input) failed to decode in Chrome (PIPELINE_ERROR_DECODE).
+- Case clips (motion-*.mp4 + -s.mp4) live on Bunny only (gitignored; Cloudflare static assets ignore Range, Safari
+  needs it): scripts/bunny-upload.mjs now takes --only <regex>; UPLOAD-MARIPOSA-CLIPS.bat (Dennis types the zone
+  password) uploads the 12 new files.
+
 ## Load-speed pass (Oct 27 2026, speed tests)
 Measured cold loads (Lighthouse throttling: phone slow-4G + 4x CPU, desktop 10Mbps). Phone home LCP 12.5s -> 2.7s,
 load 17.6s -> 4.7s, first-6s bytes 3.5MB -> 1.4MB; booking CLS 0.40 -> 0.000.
